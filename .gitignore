@@ -25,6 +25,7 @@ rebar3.crashdump
 !package-lock.json
 node_modules
 !.vscode/*
+!.devcontainer/devcontainer.json
 
 *.bin
 !.vscode/*

@@ -1,0 +1,5 @@
+
+tasks:
+  build:
+      name: Build
+      command: make

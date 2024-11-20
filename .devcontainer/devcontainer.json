@@ -1,0 +1,21 @@
+// The Dev Container format allows you to configure your environment. At the heart of it
+// is a Docker image or Dockerfile which controls the tools available in your environment.
+//
+// See https://aka.ms/devcontainer.json for more information.
+{
+	"name": "HyperBEAM",
+	"build": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
+  },
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": ["editorconfig.editorconfig", "pgourlain.erlang"]
+		}
+	},
+	// Features add additional features to your environment. See https://containers.dev/features
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  }
+}
