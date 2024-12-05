@@ -12,42 +12,42 @@
 
 %% @doc Create a new transaction.
 new(Dest, Reward, Qty, Last) ->
-    #tx{
-        id = crypto:strong_rand_bytes(32),
-        last_tx = Last,
-        quantity = Qty,
-        target = Dest,
-        data = <<>>,
-        data_size = 0,
-        reward = Reward
-    }.
+	#tx{
+		id = crypto:strong_rand_bytes(32),
+		last_tx = Last,
+		quantity = Qty,
+		target = Dest,
+		data = <<>>,
+		data_size = 0,
+		reward = Reward
+	}.
 
 new(Dest, Reward, Qty, Last, SigType) ->
-    #tx{
-        id = crypto:strong_rand_bytes(32),
-        last_tx = Last,
-        quantity = Qty,
-        target = Dest,
-        data = <<>>,
-        data_size = 0,
-        reward = Reward,
-        signature_type = SigType
-    }.
+	#tx{
+		id = crypto:strong_rand_bytes(32),
+		last_tx = Last,
+		quantity = Qty,
+		target = Dest,
+		data = <<>>,
+		data_size = 0,
+		reward = Reward,
+		signature_type = SigType
+	}.
 
 %% @doc Cryptographically sign (claim ownership of) a transaction.
 sign(TX, {PrivKey, {KeyType, Owner}}) ->
-    NewTX = TX#tx{ owner = Owner, signature_type = KeyType },
-    Sig = ar_wallet:sign(PrivKey, signature_data_segment(NewTX)),
-    ID = crypto:hash(sha256, <<Sig/binary>>),
-    NewTX#tx{ id = ID, signature = Sig }.
+	NewTX = TX#tx{ owner = Owner, signature_type = KeyType },
+	Sig = ar_wallet:sign(PrivKey, signature_data_segment(NewTX)),
+	ID = crypto:hash(sha256, <<Sig/binary>>),
+	NewTX#tx{ id = ID, signature = Sig }.
 
 %% @doc Verify whether a transaction is valid.
 verify(TX) ->
-    do_verify(TX, verify_signature).
+	do_verify(TX, verify_signature).
 
 %% @doc Verify the given transaction actually has the given identifier.
 verify_tx_id(ExpectedID, #tx{ id = ID } = TX) ->
-    ExpectedID == ID andalso verify_signature(TX, verify_signature) andalso verify_hash(TX).
+	ExpectedID == ID andalso verify_signature(TX, verify_signature) andalso verify_hash(TX).
 
 %%%===================================================================
 %%% Private functions.
@@ -55,51 +55,51 @@ verify_tx_id(ExpectedID, #tx{ id = ID } = TX) ->
 
 %% @doc Generate the data segment to be signed for a given TX.
 signature_data_segment(TX) ->
-    List = [
-        << (integer_to_binary(TX#tx.format))/binary >>,
-        << (TX#tx.owner)/binary >>,
-        << (TX#tx.target)/binary >>,
-        << (list_to_binary(integer_to_list(TX#tx.quantity)))/binary >>,
-        << (list_to_binary(integer_to_list(TX#tx.reward)))/binary >>,
-        << (TX#tx.last_tx)/binary >>,
-        << (integer_to_binary(TX#tx.data_size))/binary >>,
-        << (TX#tx.data_root)/binary >>
-    ],
-    ar_deep_hash:hash(List).
+	List = [
+		<< (integer_to_binary(TX#tx.format))/binary >>,
+		<< (TX#tx.owner)/binary >>,
+		<< (TX#tx.target)/binary >>,
+		<< (list_to_binary(integer_to_list(TX#tx.quantity)))/binary >>,
+		<< (list_to_binary(integer_to_list(TX#tx.reward)))/binary >>,
+		<< (TX#tx.last_tx)/binary >>,
+		<< (integer_to_binary(TX#tx.data_size))/binary >>,
+		<< (TX#tx.data_root)/binary >>
+	],
+	ar_deep_hash:hash(List).
 
 %% @doc Verify the transaction's signature.
 verify_signature(_TX, do_not_verify_signature) ->
-    true;
+	true;
 verify_signature(TX = #tx{ signature_type = SigType }, verify_signature) ->
-    SignatureDataSegment = signature_data_segment(TX),
-    ar_wallet:verify({SigType, TX#tx.owner}, SignatureDataSegment, TX#tx.signature).
+	SignatureDataSegment = signature_data_segment(TX),
+	ar_wallet:verify({SigType, TX#tx.owner}, SignatureDataSegment, TX#tx.signature).
 
 %% @doc Verify that the transaction's ID is a hash of its signature.
 verify_hash(#tx{ signature = Sig, id = ID }) ->
-    ID == crypto:hash(sha256, << Sig/binary >>).
+	ID == crypto:hash(sha256, << Sig/binary >>).
 
 %% @doc Verify transaction.
 do_verify(TX, VerifySignature) ->
-    From = ar_wallet:to_address(TX#tx.owner, TX#tx.signature_type),
-    Checks = [
-        {"quantity_negative", TX#tx.quantity >= 0},
-        {"same_owner_as_target", (From =/= TX#tx.target)},
-        {"tx_id_not_valid", verify_hash(TX)},
-        {"tx_signature_not_valid", verify_signature(TX, VerifySignature)},
-        {"tx_data_size_negative", TX#tx.data_size >= 0},
-        {"tx_data_size_data_root_mismatch", (TX#tx.data_size == 0) == (TX#tx.data_root == <<>>)}
-    ],
-    collect_validation_results(TX#tx.id, Checks).
+	From = ar_wallet:to_address(TX#tx.owner, TX#tx.signature_type),
+	Checks = [
+		{"quantity_negative", TX#tx.quantity >= 0},
+		{"same_owner_as_target", (From =/= TX#tx.target)},
+		{"tx_id_not_valid", verify_hash(TX)},
+		{"tx_signature_not_valid", verify_signature(TX, VerifySignature)},
+		{"tx_data_size_negative", TX#tx.data_size >= 0},
+		{"tx_data_size_data_root_mismatch", (TX#tx.data_size == 0) == (TX#tx.data_root == <<>>)}
+	],
+	collect_validation_results(TX#tx.id, Checks).
 
 collect_validation_results(_TXID, Checks) ->
-    KeepFailed = fun
-        ({_, true}) -> false;
-        ({ErrorCode, false}) -> {true, ErrorCode}
-    end,
-    case lists:filtermap(KeepFailed, Checks) of
-        [] -> true;
-        _ -> false
-    end.
+	KeepFailed = fun
+		({_, true}) -> false;
+		({ErrorCode, false}) -> {true, ErrorCode}
+	end,
+	case lists:filtermap(KeepFailed, Checks) of
+		[] -> true;
+		_ -> false
+	end.
 
 json_struct_to_tx(TXStruct) ->
 	Tags =

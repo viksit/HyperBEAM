@@ -10,7 +10,7 @@
 %%% element to store a cache of values that are expensive to recompute. They
 %%% should _not_ be used for encoding state that makes the execution of a
 %%% device non-deterministic (unless you are sure you know what you are doing).
-%%% 
+%%%
 %%% See `hb_pam` for more information about the Permaweb Abstract Machine (PAM)
 %%% and private elements of messages.
 
@@ -19,9 +19,9 @@
 from_message(Msg) -> maps:get(private, Msg, #{}).
 
 %% @doc Helper for getting a value from the private element of a message.
-get(Msg, Key) -> 
+get(Msg, Key) ->
 	get(Msg, Key, undefined).
-get(Msg, Key, Default) -> 
+get(Msg, Key, Default) ->
 	maps:get(Key, from_message(Msg), Default).
 
 %% @doc Helper function for setting a key in the private element of a message.

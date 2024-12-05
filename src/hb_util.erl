@@ -53,29 +53,29 @@ human_id(Bin) when is_binary(Bin) andalso byte_size(Bin) == 43 ->
 
 %% @doc Encode a binary to URL safe base64 binary string.
 encode(Bin) ->
-  b64fast:encode(Bin).
+	b64fast:encode(Bin).
 
 %% @doc Try to decode a URL safe base64 into a binary or throw an error when
 %% invalid.
 decode(Input) ->
-  b64fast:decode(Input).
+	b64fast:decode(Input).
 
 %% @doc Safely encode a binary to URL safe base64.
 safe_encode(Bin) when is_binary(Bin) ->
-  encode(Bin);
+	encode(Bin);
 safe_encode(Bin) ->
-  Bin.
+	Bin.
 
 %% @doc Safely decode a URL safe base64 into a binary returning an ok or error
 %% tuple.
 safe_decode(E) ->
-  try
-    D = decode(E),
-    {ok, D}
-  catch
-    _:_ ->
-      {error, invalid}
-  end.
+	try
+		D = decode(E),
+		{ok, D}
+	catch
+		_:_ ->
+			{error, invalid}
+	end.
 
 %% @doc Label a list of elements with a number.
 number(List) ->
@@ -86,7 +86,7 @@ number(List) ->
 
 %% @doc Convert a list of elements to a map with numbered keys.
 list_to_numbered_map(List) ->
-  maps:from_list(number(List)).
+	maps:from_list(number(List)).
 
 %% @doc Take a message with numbered keys and convert it to a list of tuples
 %% with the associated key as an integer and a value. Optionally, it takes a
@@ -117,7 +117,7 @@ message_to_numbered_list(Message, Opts) ->
 %% @doc Get the first element (the lowest integer key >= 1) of a numbered map.
 %% Optionally, it takes a specifier of whether to return the key or the value,
 %% as well as a standard map of HyperBEAM runtime options.
-%% 
+%%
 %% If `error_strategy` is `throw`, raise an exception if no integer keys are
 %% found. If `error_strategy` is `any`, return `undefined` if no integer keys
 %% are found. By default, the function does not pass a `throw` execution
@@ -126,7 +126,7 @@ message_to_numbered_list(Message, Opts) ->
 hd(Message) -> hd(Message, value).
 hd(Message, ReturnType) ->
 	hd(Message, ReturnType, #{ error_strategy => throw }).
-hd(Message, ReturnType, Opts) -> 
+hd(Message, ReturnType, Opts) ->
 	{ok, Keys} = hb_pam:resolve(Message, keys),
 	hd(Message, Keys, 1, ReturnType, Opts).
 hd(_Map, [], _Index, _ReturnType, #{ error_strategy := throw }) ->
@@ -145,34 +145,34 @@ hd(Message, [Key|Rest], Index, ReturnType, Opts) ->
 
 %% @doc Find the value associated with a key in parsed a JSON structure list.
 find_value(Key, List) ->
-  hb_util:find_value(Key, List, undefined).
+	hb_util:find_value(Key, List, undefined).
 
 find_value(Key, Map, Default) when is_map(Map) ->
-  case maps:find(Key, Map) of
-    {ok, Value} ->
-      Value;
-    error ->
-      Default
-  end;
+	case maps:find(Key, Map) of
+		{ok, Value} ->
+			Value;
+		error ->
+			Default
+	end;
 find_value(Key, List, Default) ->
-  case lists:keyfind(Key, 1, List) of
-    {Key, Val} ->
-      Val;
-    false ->
-      Default
-  end.
+	case lists:keyfind(Key, 1, List) of
+		{Key, Val} ->
+			Val;
+		false ->
+			Default
+	end.
 
 %% @doc Remove the common prefix from two strings, returning the remainder of the
 %% first string. This function also coerces lists to binaries where appropriate,
 %% returning the type of the first argument.
 remove_common(MainStr, SubStr) when is_binary(MainStr) and is_list(SubStr) ->
-    remove_common(MainStr, list_to_binary(SubStr));
+		remove_common(MainStr, list_to_binary(SubStr));
 remove_common(MainStr, SubStr) when is_list(MainStr) and is_binary(SubStr) ->
-    binary_to_list(remove_common(list_to_binary(MainStr), SubStr));
+		binary_to_list(remove_common(list_to_binary(MainStr), SubStr));
 remove_common(<< X:8, Rest1/binary>>, << X:8, Rest2/binary>>) ->
-    remove_common(Rest1, Rest2);
+		remove_common(Rest1, Rest2);
 remove_common([X|Rest1], [X|Rest2]) ->
-    remove_common(Rest1, Rest2);
+		remove_common(Rest1, Rest2);
 remove_common([$/|Path], _) -> Path;
 remove_common(Rest, _) -> Rest.
 
@@ -187,24 +187,24 @@ maybe_throw(Val, Opts) ->
 %% @doc Print a message to the standard error stream, prefixed by the amount
 %% of time that has elapsed since the last call to this function.
 debug_print(X, Mod, Func, LineNum) ->
-    Now = erlang:system_time(millisecond),
-    Last = erlang:put(last_debug_print, Now),
-    TSDiff = case Last of undefined -> 0; _ -> Now - Last end,
-    io:format(standard_error, "=== HB DEBUG ===[~pms in ~p @ ~s:~w ~p]==> ~s~n",
-        [
+		Now = erlang:system_time(millisecond),
+		Last = erlang:put(last_debug_print, Now),
+		TSDiff = case Last of undefined -> 0; _ -> Now - Last end,
+		io:format(standard_error, "=== HB DEBUG ===[~pms in ~p @ ~s:~w ~p]==> ~s~n",
+				[
 			TSDiff, self(), Mod, LineNum, Func,
 			lists:flatten(debug_fmt(X, 0))
 		]),
-    X.
+		X.
 
 %% @doc Convert a term to a string for debugging print purposes.
 debug_fmt(X) -> debug_fmt(X, 0).
 debug_fmt({explicit, X}, Indent) ->
-    format_indented("~p", [X], Indent);
+		format_indented("~p", [X], Indent);
 debug_fmt({X, Y}, Indent) when is_atom(X) and is_atom(Y) ->
-    format_indented("~p: ~p", [X, Y], Indent);
+		format_indented("~p: ~p", [X, Y], Indent);
 debug_fmt({X, Y}, Indent) when is_record(Y, tx) ->
-    format_indented("~p: [TX item]~n~s",
+		format_indented("~p: [TX item]~n~s",
 		[X, ar_bundles:format(Y, Indent + 1)],
 		Indent
 	);
@@ -222,15 +222,15 @@ debug_fmt({X, Y}, Indent) when is_map(Y) ->
 		Indent
 	);
 debug_fmt({X, Y}, Indent) ->
-    format_indented("~s: ~s", [debug_fmt(X, Indent), debug_fmt(Y, Indent)], Indent);
+		format_indented("~s: ~s", [debug_fmt(X, Indent), debug_fmt(Y, Indent)], Indent);
 debug_fmt(Map, Indent) when is_map(Map) ->
 	hb_util:format_map(Map, Indent);
 debug_fmt(Tuple, Indent) when is_tuple(Tuple) ->
-    format_tuple(Tuple, Indent);
+		format_tuple(Tuple, Indent);
 debug_fmt(Str = [X | _], Indent) when is_integer(X) andalso X >= 32 andalso X < 127 ->
-    format_indented("~s", [Str], Indent);
+		format_indented("~s", [Str], Indent);
 debug_fmt(X, Indent) ->
-    format_indented("~120p", [X], Indent).
+		format_indented("~120p", [X], Indent).
 
 %% @doc Helper function to format tuples with arity greater than 2.
 format_tuple(Tuple, Indent) ->

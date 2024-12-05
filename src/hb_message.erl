@@ -10,7 +10,7 @@
 %%% @moduledoc This module acts an adapter between messages, as modeled in the
 %%% Permaweb Abstract Machine (PAM), and their underlying binary representations.
 %%% See `docs/permaweb-abstract-machine.md` for details on PAM. Unless you are
-%%% implementing a new message serialization format, you should not need to 
+%%% implementing a new message serialization format, you should not need to
 %%% interact with this module directly. Instead, use the `hb_pam`
 %%% interfaces to interact with all messages. The `dev_message` module
 %%% implements a device interface for handling messages as the default PAM
@@ -36,7 +36,7 @@
 %% @doc Pretty-print a message.
 print(Msg) -> print(Msg, 0).
 print(Msg, Indent) ->
-    io:format(standard_error, "~s", [lists:flatten(format(Msg, Indent))]).
+	io:format(standard_error, "~s", [lists:flatten(format(Msg, Indent))]).
 
 %% @doc Format a message for printing, optionally taking an indentation level
 %% to start from.
@@ -47,11 +47,11 @@ format(Bin, Indent) when is_binary(Bin) ->
 		Indent
 	);
 format(Map, Indent) when is_map(Map) ->
-    Header = hb_util:format_indented("Message {~n", Indent),
-    Res = lists:map(
-        fun({Key, Val}) ->
+	Header = hb_util:format_indented("Message {~n", Indent),
+	Res = lists:map(
+		fun({Key, Val}) ->
 			NormKey = hb_pam:to_key(Key, #{ error_strategy => ignore }),
-			KeyStr = 
+			KeyStr =
 				case NormKey of
 					Key ->
 						io_lib:format("~p", [NormKey]);
@@ -76,8 +76,8 @@ format(Map, Indent) when is_map(Map) ->
 				Indent + 1
 			)
 		end,
-        maps:to_list(Map)
-    ),
+		maps:to_list(Map)
+	),
 	case Res of
 		[] -> "[Empty map]";
 		_ ->
@@ -86,8 +86,8 @@ format(Map, Indent) when is_map(Map) ->
 			)
 	end;
 format(Item, Indent) ->
-    % Whatever we have is not a message map.
-    hb_util:format_indented("[UNEXPECTED VALUE] ~p", [Item], Indent).
+	% Whatever we have is not a message map.
+	hb_util:format_indented("[UNEXPECTED VALUE] ~p", [Item], Indent).
 
 %% @doc Return the signers of a message. For now, this is just the signer
 %% of the message itself. In the future, we will support multiple signers.
@@ -131,7 +131,7 @@ match(Map1, Map2) ->
 			?event({keys_mismatch, Keys1, Keys2}),
 			false
 	end.
-	
+
 matchable_keys(Map) ->
 	lists:sort(lists:map(fun hb_pam:key_to_binary/1, maps:keys(Map))).
 
@@ -192,7 +192,7 @@ default_tx_list() ->
 %% binary format native to the message/bundles spec in use.
 serialize(M) -> serialize(M, binary).
 serialize(M, json) ->
-    jiffy:encode(ar_bundles:item_to_json_struct(M));
+	jiffy:encode(ar_bundles:item_to_json_struct(M));
 serialize(M, binary) ->
 	ar_bundles:serialize(message_to_tx(M)).
 
@@ -205,8 +205,8 @@ deserialize(B, binary) ->
 	tx_to_message(ar_bundles:deserialize(B)).
 
 %% @doc Internal helper to translate a message to its #tx record representation,
-%% which can then be used by ar_bundles to serialize the message. We call the 
-%% message's device in order to get the keys that we will be checkpointing. We 
+%% which can then be used by ar_bundles to serialize the message. We call the
+%% message's device in order to get the keys that we will be checkpointing. We
 %% do this recursively to handle nested messages. The base case is that we hit
 %% a binary, which we return as is.
 message_to_tx(Binary) when is_binary(Binary) ->
@@ -282,7 +282,7 @@ message_to_tx(M) when is_map(M) ->
 			fun({_Key, Value}) when byte_size(Value) =< ?MAX_TAG_VAL -> true;
 				(_) -> false
 			end,
-			[ 
+			[
 					{Key, maps:get(Key, RemainingMap)}
 				||
 					Key <- maps:keys(RemainingMap)
@@ -299,7 +299,7 @@ message_to_tx(M) when is_map(M) ->
 		RawDataItems
 	)),
 	% Set the data based on the remaining keys.
-	TXWithData = 
+	TXWithData =
 		case {TX#tx.data, maps:size(DataItems)} of
 			{Binary, 0} when is_binary(Binary) ->
 				TX;

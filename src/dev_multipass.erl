@@ -6,12 +6,12 @@
 %%% to be completed in sequence across devices.
 
 init(S, Params) ->
-    {<<"Passes">>, Passes} = lists:keyfind(<<"Passes">>, 1, Params),
-    {ok, S#{ pass => 1, passes => binary_to_integer(Passes) }}.
+	{<<"Passes">>, Passes} = lists:keyfind(<<"Passes">>, 1, Params),
+	{ok, S#{ pass => 1, passes => binary_to_integer(Passes) }}.
 
 execute(_, S = #{ pass := Pass, passes := Passes }) when Pass < Passes ->
-    {pass, S};
+	{pass, S};
 execute(_, S) ->
-    {ok, S}.
+	{ok, S}.
 
 uses() -> all.

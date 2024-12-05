@@ -15,52 +15,52 @@
 new() ->
 	new({rsa, 65537}).
 new(KeyType = {KeyAlg, PublicExpnt}) when KeyType =:= {rsa, 65537} ->
-    {[_, Pub], [_, Pub, Priv|_]} = {[_, Pub], [_, Pub, Priv|_]}
+	{[_, Pub], [_, Pub, Priv|_]} = {[_, Pub], [_, Pub, Priv|_]}
 		= crypto:generate_key(KeyAlg, {4096, PublicExpnt}),
-    {{KeyType, Priv, Pub}, {KeyType, Pub}}.
+	{{KeyType, Priv, Pub}, {KeyType, Pub}}.
 
 %% @doc Sign some data with a private key.
 sign({{rsa, PublicExpnt}, Priv, Pub}, Data)
-    when PublicExpnt =:= 65537 ->
-    rsa_pss:sign(
-        Data,
-        sha256,
-        #'RSAPrivateKey'{
-            publicExponent = PublicExpnt,
-            modulus = binary:decode_unsigned(Pub),
-            privateExponent = binary:decode_unsigned(Priv)
-        }
-    ).
+	when PublicExpnt =:= 65537 ->
+	rsa_pss:sign(
+		Data,
+		sha256,
+		#'RSAPrivateKey'{
+			publicExponent = PublicExpnt,
+			modulus = binary:decode_unsigned(Pub),
+			privateExponent = binary:decode_unsigned(Priv)
+		}
+	).
 
 %% @doc Verify that a signature is correct.
 verify({{rsa, PublicExpnt}, Pub}, Data, Sig)
-    when PublicExpnt =:= 65537 ->
-    rsa_pss:verify(
-        Data,
-        sha256,
-        Sig,
-        #'RSAPublicKey'{
-            publicExponent = PublicExpnt,
-            modulus = binary:decode_unsigned(Pub)
-        }
-    ).
+	when PublicExpnt =:= 65537 ->
+	rsa_pss:verify(
+		Data,
+		sha256,
+		Sig,
+		#'RSAPublicKey'{
+			publicExponent = PublicExpnt,
+			modulus = binary:decode_unsigned(Pub)
+		}
+	).
 
 %% @doc Generate an address from a public key.
 to_address(Pubkey) ->
 	to_address(Pubkey, ?DEFAULT_KEY_TYPE).
 to_address(PubKey, {rsa, 65537}) when bit_size(PubKey) == 256 ->
-    %% Small keys are not secure, nobody is using them, the clause
-    %% is for backwards-compatibility.
-    PubKey;
+	%% Small keys are not secure, nobody is using them, the clause
+	%% is for backwards-compatibility.
+	PubKey;
 to_address({{_, _, PubKey}, {_, PubKey}}, {rsa, 65537}) ->
-    to_address(PubKey);
+	to_address(PubKey);
 to_address(PubKey, {rsa, 65537}) ->
-    to_rsa_address(PubKey).
+	to_rsa_address(PubKey).
 
 %% @doc Generate a new wallet public and private key, with a corresponding keyfile.
 %% The provided key is used as part of the file name.
 new_keyfile(KeyType, WalletName) when is_list(WalletName) ->
-    new_keyfile(KeyType, list_to_binary(WalletName));
+	new_keyfile(KeyType, list_to_binary(WalletName));
 new_keyfile(KeyType, WalletName) ->
 	{Pub, Priv, Key} =
 		case KeyType of
@@ -186,10 +186,10 @@ load_keyfile(File) ->
 %%%===================================================================
 
 to_rsa_address(PubKey) ->
-    hash_address(PubKey).
+	hash_address(PubKey).
 
 hash_address(PubKey) ->
-    crypto:hash(sha256, PubKey).
+	crypto:hash(sha256, PubKey).
 
 %%%===================================================================
 %%% Private functions.

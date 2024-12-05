@@ -9,44 +9,44 @@
 -include("include/hb.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-%%% @moduledoc This module is the root of the device call logic of the 
+%%% @moduledoc This module is the root of the device call logic of the
 %%% Permaweb Abstract Machine (PAM) in HyperBEAM.
-%%% 
+%%%
 %%% At the PAM layer, every device is simply a collection of keys that can be
-%%% resolved in order to yield their values. Each key may return another 
+%%% resolved in order to yield their values. Each key may return another
 %%% message or a binary:
-%%% 
+%%%
 %%% 	resolve(Message1, Message2) -> {Status, Message3}
-%%% 
+%%%
 %%% See `docs/permaweb-abstract-machine.md` for more information about PAM.
-%%% 
+%%%
 %%% When a device key is called, it is passed the `Message1` (likely its state),
 %%% as well as the message to 'apply' to it. It must return a tuple of the
-%%% form {Status, NewMessage}, where Status is either ok or error, and 
+%%% form {Status, NewMessage}, where Status is either ok or error, and
 %%% NewMessage is either a new message or a binary.
-%%% 
-%%% The key to resolve is typically specified by the `Path` field of the 
+%%%
+%%% The key to resolve is typically specified by the `Path` field of the
 %%% message.
-%%% 
+%%%
 %%% In the HyperBEAM implementation (this module), `Message1` can be replaced
-%%% a function name to execute for ease of development with PAM. In this 
+%%% a function name to execute for ease of development with PAM. In this
 %%% case, the function name is cast to an unsigned message with the `Path` set
 %%% to the given name.
-%%% 
-%%% Devices can be expressed as either modules or maps. They can also be 
-%%% referenced by an Arweave ID, which can be used to load a device from 
-%%% the network (depending on the value of the `load_remote_devices` and 
+%%%
+%%% Devices can be expressed as either modules or maps. They can also be
+%%% referenced by an Arweave ID, which can be used to load a device from
+%%% the network (depending on the value of the `load_remote_devices` and
 %%% `trusted_device_signers` environment settings).
-%%% 
+%%%
 %%% Resolution options:
-%%% 
+%%%
 %%% `update_hashpath`: Whether to add the `Msg2` to `HashPath` for the `Msg3`.
 %%% 					Default: true.
 %%% `cache_results`:   Whether to cache the resolved `Msg3`.
 %%% 					Default: true.
 %%% `add_key`:         Whether to add the key to the start of the arguments.
 %%% 					Default: <not set>.
-%%% 
+%%%
 %%% In general, all of these options are dangerous. Don't use them unless you
 %%% know what you are doing.
 
@@ -54,9 +54,9 @@
 %% function. Optionally, pass a message containing parameters to the call, as
 %% well as options that control the runtime environment. This function returns
 %% the raw result of the device function call: {ok | error, NewMessage}.
-%% 
+%%
 %% In many cases the device will not implement the key, however, so the default
-%% device is used instead. The default (`dev_message`) simply returns the 
+%% device is used instead. The default (`dev_message`) simply returns the
 %% value associated with the key as it exists in the message's underlying
 %% Erlang map. In this way, devices are able to implement 'special' keys which
 %% do not exist as values in the message's map, while still exposing the 'normal'
@@ -80,7 +80,7 @@ prepare_resolve(Msg1, Msg2, Opts) ->
 			{Status, ReturnedFun} = message_to_fun(Msg1, Key),
 			% Next, add an option to the Opts map to indicate if we should
 			% add the key to the start of the arguments. Note: This option
-			% is used downstream by other devices (like `dev_stack`), so 
+			% is used downstream by other devices (like `dev_stack`), so
 			% should be changed with care.
 			{
 				ReturnedFun,
@@ -133,7 +133,7 @@ do_resolve(Msg1, Fun, Msg2, Opts) ->
 %% 2. Pop the first element of the path from Msg2.
 %% 3. Write the result to the cache unless the `cache` option is set to false.
 %% 4. If there are still elements in the path, we recurse through execution.
-%% If additional elements are included as part of the result, we pass them 
+%% If additional elements are included as part of the result, we pass them
 %% through to the caller.
 handle_resolved_result(Msg3, _Msg2, _UserOpts) when is_binary(Msg3) ->
 	Msg3;
@@ -176,8 +176,8 @@ handle_resolved_result([ok, Msg3Raw | Rest], Msg2, Opts) ->
 			resolve(Msg3, NextMsg, Opts)
 	end.
 
-%% @doc Shortcut for resolving a key in a message without its 
-%% status if it is `ok`. This makes it easier to write complex 
+%% @doc Shortcut for resolving a key in a message without its
+%% status if it is `ok`. This makes it easier to write complex
 %% logic on top of messages while maintaining a functional style.
 get(Path, Msg) ->
 	get(Path, Msg, default_runtime_opts(Msg)).
@@ -266,20 +266,20 @@ truncate_args(Fun, Args) ->
 
 %% @doc Calculate the Erlang function that should be called to get a value for
 %% a given key from a device.
-%% 
+%%
 %% This comes in 7 forms:
 %% 1. The message does not specify a device, so we use the default device.
-%% 2. The device has a `handler` key in its `Dev:info()` map, which is a 
+%% 2. The device has a `handler` key in its `Dev:info()` map, which is a
 %% function that takes a key and returns a function to handle that key. We pass
 %% the key as an additional argument to this function.
-%% 3. The device has a function of the name `Key`, which should be called 
+%% 3. The device has a function of the name `Key`, which should be called
 %% directly.
-%% 4. The device does not implement the key, but does have a default handler 
+%% 4. The device does not implement the key, but does have a default handler
 %% for us to call. We pass it the key as an additional argument.
 %% 5. The device does not implement the key, and has no default handler. We use
 %% the default device to handle the key.
 %% Error: If the device is specified, but not loadable, we raise an error.
-%% 
+%%
 %% Returns {ok | add_key, Fun} where Fun is the function to call, and add_key
 %% indicates that the key should be added to the start of the call's arguments.
 message_to_fun(Msg, Key) when not is_map_key(device, Msg) ->
@@ -337,7 +337,7 @@ message_to_fun(Msg = #{ device := RawDev }, Key) ->
 %% exists.
 %%
 %% If the device is a module, we look for a function with the given name.
-%% 
+%%
 %% If the device is a map, we look for a key in the map. First we try to find
 %% the key using its literal value. If that fails, we cast the key to an atom
 %% and try again.
@@ -397,7 +397,7 @@ is_exported(Dev, Key) ->
 %% or to a binary otherwise.
 to_key(Key) -> to_key(Key, #{ error_strategy => throw }).
 to_key(Key, _Opts) when byte_size(Key) == 43 -> Key;
-to_key(Key, _Opts) -> 
+to_key(Key, _Opts) ->
 	try to_atom_unsafe(Key)
 	catch _Type:_:_Trace -> key_to_binary(Key)
 	end.
@@ -424,9 +424,9 @@ to_atom_unsafe(Key) when is_atom(Key) -> Key.
 load_device(ID) -> load_device(ID, #{}).
 load_device(Map, _Opts) when is_map(Map) -> {ok, Map};
 load_device(ID, _Opts) when is_atom(ID) ->
-    try ID:module_info(), {ok, ID}
-    catch _:_ -> {error, not_loadable}
-    end;
+	try ID:module_info(), {ok, ID}
+	catch _:_ -> {error, not_loadable}
+	end;
 load_device(ID, Opts) when is_binary(ID) and byte_size(ID) == 43 ->
 	case hb_opts:get(load_remote_devices) of
 		true ->
@@ -457,10 +457,10 @@ load_device(ID, Opts) when is_binary(ID) and byte_size(ID) == 43 ->
 			{error, remote_devices_disabled}
 	end;
 load_device(ID, _Opts) ->
-    case maps:get(ID, hb_opts:get(preloaded_devices), unsupported) of
-        unsupported -> {error, module_not_admissable};
-        Mod -> {ok, Mod}
-    end.
+	case maps:get(ID, hb_opts:get(preloaded_devices), unsupported) of
+		unsupported -> {error, module_not_admissable};
+		Mod -> {ok, Mod}
+	end.
 
 %% @doc Get the info map for a device, optionally giving it a message if the
 %% device's info function is parameterized by one.
@@ -538,7 +538,7 @@ generate_device_with_keys_using_args() ->
 	}.
 
 %% @doc Test that arguments are passed to a device key as expected.
-%% Particularly, we need to ensure that the key function in the device can 
+%% Particularly, we need to ensure that the key function in the device can
 %% specify any arity (1 through 3) and the call is handled correctly.
 key_from_id_device_with_args_test() ->
 	Msg =

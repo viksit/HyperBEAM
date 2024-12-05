@@ -4,15 +4,15 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %%% @moduledoc Implements the cryptographic functions and wraps the primitives
-%%% used in HyperBEAM. Abstracted such that this (extremely!) dangerous code 
+%%% used in HyperBEAM. Abstracted such that this (extremely!) dangerous code
 %%% can be carefully managed.
-%%% 
+%%%
 %%% HyperBEAM currently implements two hashpath algorithms:
-%%% 
+%%%
 %%% * `sha-256-chain`: A simple chained SHA-256 hash.
 %%% * `accumulate-256`: A SHA-256 hash that chains the given IDs and accumulates
 %%%   their values into a single commitment.
-%%% 
+%%%
 %%% The accumulate algorithm is experimental and at this point only exists to
 %%% allow us to test multiple HashPath algorithms in HyperBEAM.
 

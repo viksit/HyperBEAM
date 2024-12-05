@@ -10,17 +10,17 @@
 %%% A simple abstraction layer for AO key value store operations.
 %%% This interface allows us to swap out the underlying store
 %%% implementation(s) as desired.
-%%% 
+%%%
 %%% It takes a list of modules and their options, and calls the appropriate
 %%% function on the first module that succeeds. If all modules fail, it returns
 %%% {error, no_viable_store}.
 
 behavior_info(callbacks) ->
-    [
-        {start, 1}, {stop, 1}, {reset, 1}, {make_group, 2}, {make_link, 3},
-        {type, 2}, {read, 2}, {write, 3},
-        {list, 2}, {path, 2}, {add_path, 3}
-    ].
+	[
+		{start, 1}, {stop, 1}, {reset, 1}, {make_group, 2}, {make_link, 3},
+		{type, 2}, {read, 2}, {write, 3},
+		{list, 2}, {path, 2}, {add_path, 3}
+	].
 
 -define(DEFAULT_SCOPE, local).
 
@@ -35,25 +35,25 @@ stop(Modules) -> call_function(Modules, stop, []).
 %% function takes 2 arguments: the scope and the options. It calls the store's
 %% scope function to get the scope of the module.
 filter(Modules, Filter) ->
-    lists:filter(
-        fun(Store) ->
-            try Filter(get_store_scope(Store), Store)
-            catch _:_ -> false
-            end
-        end,
-        Modules
-    ).
+	lists:filter(
+		fun(Store) ->
+			try Filter(get_store_scope(Store), Store)
+			catch _:_ -> false
+			end
+		end,
+		Modules
+	).
 
 %% @doc Limit the store scope to only a specific (set of) option(s).
 %% Takes either a single scope or a list of scopes.
 scope(Store, Scope) ->
-    filter(
-        Store,
-        fun(StoreScope, _) ->
-            StoreScope == Scope orelse
+	filter(
+		Store,
+		fun(StoreScope, _) ->
+			StoreScope == Scope orelse
 				(is_list(Scope) andalso lists:member(StoreScope, Scope))
-        end
-    ).
+		end
+	).
 
 %% @doc Ask a store for its own scope. If it doesn't have one, return the
 %% default scope (local).
@@ -97,7 +97,7 @@ join([]) -> [];
 join(Path) when is_binary(Path) -> Path;
 join([""|Xs]) -> join(Xs);
 join(FN = [X|_Xs]) when is_integer(X) -> FN;
-join([X|Xs]) -> 
+join([X|Xs]) ->
 	filename:join(join(X), join(Xs)).
 
 %%% The store interface that modules should implement.
@@ -128,19 +128,19 @@ type(Modules, Path) -> call_function(Modules, type, [Path]).
 %% the path function, we return the path with the 'default' transformation (id).
 path(Path) -> Path.
 path(Store, Path) ->
-    case call_function(Store, path, [Path]) of
-        not_found -> path(Path);
-        Result -> Result
-    end.
+	case call_function(Store, path, [Path]) of
+		not_found -> path(Path);
+		Result -> Result
+	end.
 
 %% @doc Add two path components together. If no store implements the add_path
 %% function, we concatenate the paths.
 add_path(Path1, Path2) -> Path1 ++ Path2.
 add_path(Store, Path1, Path2) ->
-    case call_function(Store, add_path, [Path1, Path2]) of
-        no_viable_store -> add_path(Path1, Path2);
-        Result -> Result
-    end.
+	case call_function(Store, add_path, [Path1, Path2]) of
+		no_viable_store -> add_path(Path1, Path2);
+		Result -> Result
+	end.
 
 %% @doc Follow links through the store to resolve a path to its ultimate target.
 resolve(Modules, Path) -> call_function(Modules, resolve, [Path]).
@@ -153,31 +153,31 @@ list(Modules, Path) -> call_function(Modules, list, [Path]).
 %% @doc Call a function on the first store module that succeeds. Returns its
 %% result, or no_viable_store if none of the stores succeed.
 call_function(X, _Function, _Args) when not is_list(X) ->
-    call_function([X], _Function, _Args);
+	call_function([X], _Function, _Args);
 call_function([], _Function, _Args) ->
-    not_found;
+	not_found;
 call_function([{Mod, Opts} | Rest], Function, Args) ->
-    ?event({calling, Mod, Function}),
-    try apply(Mod, Function, [Opts | Args]) of
-        not_found ->
-            call_function(Rest, Function, Args);
-        Result ->
-            Result
-    catch
-        _:_ ->
-            call_function(Rest, Function, Args)
-    end.
+	?event({calling, Mod, Function}),
+	try apply(Mod, Function, [Opts | Args]) of
+		not_found ->
+			call_function(Rest, Function, Args);
+		Result ->
+			Result
+	catch
+		_:_ ->
+			call_function(Rest, Function, Args)
+	end.
 
 %% @doc Call a function on all modules in the store.
 call_all(X, _Function, _Args) when not is_list(X) ->
-    call_all([X], _Function, _Args);
+	call_all([X], _Function, _Args);
 call_all([], _Function, _Args) ->
-    ok;
+	ok;
 call_all([{Mod, Opts} | Rest], Function, Args) ->
-    try
-        apply(Mod, Function, [Opts | Args])
-    catch
-        _:_ ->
-            ok
-    end,
-    call_all(Rest, Function, Args).
+	try
+		apply(Mod, Function, [Opts | Args])
+	catch
+		_:_ ->
+			ok
+	end,
+	call_all(Rest, Function, Args).

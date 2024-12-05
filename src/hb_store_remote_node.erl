@@ -11,30 +11,30 @@
 scope(_) -> remote.
 
 resolve(#{ node := Node }, Key) ->
-    ?event({resolving_to_self, Node, Key}),
-    Key.
+	?event({resolving_to_self, Node, Key}),
+	Key.
 
 type(Opts = #{ node := Node }, Key) ->
-    ?no_prod("No need to get the whole message in order to get its type..."),
-    ?event({remote_type, Node, Key}),
-    case read(Opts, Key) of
-        not_found -> not_found;
-        #tx { data = Map } when is_map(Map) -> composite;
-        _ -> simple
-    end.
+	?no_prod("No need to get the whole message in order to get its type..."),
+	?event({remote_type, Node, Key}),
+	case read(Opts, Key) of
+		not_found -> not_found;
+		#tx { data = Map } when is_map(Map) -> composite;
+		_ -> simple
+	end.
 
 read(Opts, Key) when is_binary(Key) ->
-    read(Opts, binary_to_list(Key));
+	read(Opts, binary_to_list(Key));
 read(Opts = #{ node := Node }, Key) ->
-    Path = Node ++ "/data?Subpath=" ++ uri_string:quote(hb_store:join(Key)),
-    ?event({reading, Key, Path, Opts}),
-    case hb_http:get_binary(Path) of
-        {ok, Bundle} ->
-            case lists:keyfind(<<"Status">>, 1, Bundle#tx.tags) of
-                {<<"Status">>, <<"404">>} ->
-                    not_found;
-                _ ->
-                    {ok, Bundle}
-            end;
-        Error -> Error
-    end.
+	Path = Node ++ "/data?Subpath=" ++ uri_string:quote(hb_store:join(Key)),
+	?event({reading, Key, Path, Opts}),
+	case hb_http:get_binary(Path) of
+		{ok, Bundle} ->
+			case lists:keyfind(<<"Status">>, 1, Bundle#tx.tags) of
+				{<<"Status">>, <<"404">>} ->
+					not_found;
+				_ ->
+					{ok, Bundle}
+			end;
+		Error -> Error
+	end.

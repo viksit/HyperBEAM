@@ -4,7 +4,7 @@
 -include("include/hb.hrl").
 
 %%% The identity device: Simply return a key from the message as it is found
-%%% in the message's underlying Erlang map. Private keys (`priv[.*]`) are 
+%%% in the message's underlying Erlang map. Private keys (`priv[.*]`) are
 %%% not included.
 
 %% The list of keys that are exported by this device.
@@ -87,7 +87,7 @@ remove(Message1, #{ items := Keys }) ->
 					false -> {true, Val}
 				end
 			end,
-			Message1 
+			Message1
 		)
 	}.
 
@@ -114,7 +114,7 @@ get(Key, Msg, _Msg2) ->
 		false -> {error, not_found}
 	end.
 
-%% @doc Key matching should be case insensitive, following RFC-9110, so we 
+%% @doc Key matching should be case insensitive, following RFC-9110, so we
 %% implement a case-insensitive key lookup rather than delegating to
 %% `maps:get/2`. Encode the key to a binary if it is not already.
 case_insensitive_get(Key, Msg) ->

@@ -12,58 +12,58 @@
 %% @doc The main entry point for pushing a message. Assumes the message is
 %% a carrier message, and will extract the carried message to push from it.
 push(CarrierMsg, State) ->
-    % First pass: We need to verify the message and start the logger.
-    Msg =
-        case CarrierMsg#tx.data of
-            #{ <<"1">> := CarriedMsg } ->
-                CarriedMsg;
-            _ -> CarrierMsg
-        end,
+	% First pass: We need to verify the message and start the logger.
+	Msg =
+		case CarrierMsg#tx.data of
+			#{ <<"1">> := CarriedMsg } ->
+				CarriedMsg;
+			_ -> CarrierMsg
+		end,
 	?event({starting_push_for,
 		{unsigned, hb_util:id(Msg, unsigned)},
 		{signed, hb_util:id(Msg, signed)},
 		{target, hb_util:id(Msg#tx.target)}
 	}),
-    ?no_prod(fix_mu_push_validation),
-    case ar_bundles:verify_item(Msg) of
-        _ ->
-            Logger =
-                case maps:get(logger, State, undefined) of
-                    undefined -> hb_logger:start();
-                    X -> X
-                end,
-            hb_logger:register(Logger),
+	?no_prod(fix_mu_push_validation),
+	case ar_bundles:verify_item(Msg) of
+		_ ->
+			Logger =
+				case maps:get(logger, State, undefined) of
+					undefined -> hb_logger:start();
+					X -> X
+				end,
+			hb_logger:register(Logger),
 			fork(
 				#result {
 					messages = [Msg]
 				},
-                State#{
+				State#{
 					depth => 0,
-                    store => maps:get(store, State, hb_opts:get(store)),
-                    logger => Logger,
-                    wallet => maps:get(wallet, State, hb:wallet())
-                }
+					store => maps:get(store, State, hb_opts:get(store)),
+					logger => Logger,
+					wallet => maps:get(wallet, State, hb:wallet())
+				}
 			),
 			% TODO: Implement trace waiting.
 			ResTX = ar_bundles:sign_item(
 				#tx{ tags = [{<<"Status">>, <<"200">>}]},
 				hb:wallet()),
 			{ok, #{ results => ResTX }}
-        %false ->
-        %    {error, cannot_push_invalid_message}
-    end.
+		%false ->
+		%    {error, cannot_push_invalid_message}
+	end.
 
 %% Take a computation result and fork each message/spawn/... into its own worker.
 fork(Res, Opts) ->
-    push_messages(upload, Res#result.spawns, Opts),
-    push_messages(upload, Res#result.messages, Opts),
+	push_messages(upload, Res#result.spawns, Opts),
+	push_messages(upload, Res#result.messages, Opts),
 	push_messages(attest, Res#result.assignments, Opts).
 
 push_messages(upload, Messages, Opts) ->
-    lists:foreach(
-        fun(Message) ->
-            spawn(
-                fun() ->
+	lists:foreach(
+		fun(Message) ->
+			spawn(
+				fun() ->
 					?event(
 						{mu_forking_for,
 							{unsigned, hb_util:id(Message, unsigned)},
@@ -73,7 +73,7 @@ push_messages(upload, Messages, Opts) ->
 						}
 					),
 					Stack = dev_stack:create(?PUSH_DEV_STACK),
-                    {ok, Results} = hb_pam:resolve(
+					{ok, Results} = hb_pam:resolve(
 						{dev_stack, execute},
 						push,
 						[
@@ -92,20 +92,20 @@ push_messages(upload, Messages, Opts) ->
 						{target, hb_util:id(Message#tx.target)}
 					}),
 					handle_push_result(Results, Opts)
-                end
-            )
-        end,
-        maybe_to_list(Messages)
-    );
+				end
+			)
+		end,
+		maybe_to_list(Messages)
+	);
 push_messages(attest, Assignments, #{ logger := Logger }) ->
-    lists:foreach(
-        fun(Assignment) ->
-            hb_logger:log(Logger, {ok, "Assigning ", ar_bundles:id(Assignment, signed)}),
-            hb_client:assign(Assignment),
+	lists:foreach(
+		fun(Assignment) ->
+			hb_logger:log(Logger, {ok, "Assigning ", ar_bundles:id(Assignment, signed)}),
+			hb_client:assign(Assignment),
 			?no_prod("After assigning, don't we want to push the message?")
-        end,
-        maybe_to_list(Assignments)
-    ).
+		end,
+		maybe_to_list(Assignments)
+	).
 
 handle_push_result(Results, Opts = #{ depth := Depth }) ->
 	% Second pass: We have the results, so we can fork the messages/spawns/...
