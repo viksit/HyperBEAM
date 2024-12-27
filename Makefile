@@ -3,10 +3,13 @@
 compile:
 	rebar3 compile
 
-WAMR_VERSION = 2.1.2
+WAMR_VERSION = 2.2.0
 WAMR_DIR = _build/wamr
 
 SHELL := /bin/bash
+
+# Variable for enabling memory64
+IS_MEMORY64 = 1
 
 # commented out to remove NFR blocking commits
 # GITHOOKS_DIR = .githooks
@@ -53,23 +56,30 @@ $(WAMR_DIR):
 		--single-branch
 
 $(WAMR_DIR)/lib/libvmlib.a: $(WAMR_DIR)
+	@if [ "$(IS_MEMORY64)" -eq 1 ]; then \
+		sed -i '742a tbl_inst->is_table64 = 1;' /home/peterfarber/Auditors/HyperBEAM/_build/wamr/core/iwasm/aot/aot_runtime.c; \
+	fi
 	cmake \
 		$(WAMR_FLAGS) \
 		-S $(WAMR_DIR) \
 		-B $(WAMR_DIR)/lib \
 		-DWAMR_BUILD_TARGET=$(WAMR_BUILD_TARGET) \
 		-DWAMR_BUILD_PLATFORM=$(WAMR_BUILD_PLATFORM) \
-		-DWAMR_BUILD_MEMORY64=0 \
+		-DWAMR_BUILD_MEMORY64=$(IS_MEMORY64) \
 		-DWAMR_DISABLE_HW_BOUND_CHECK=1 \
-		-DWAMR_BUILD_EXCE_HANDLING=1 \
+		-DWAMR_BUILD_EXCE_HANDLING=0 \
 		-DWAMR_BUILD_SHARED_MEMORY=0 \
-		-DWAMR_BUILD_AOT=0 \
+		-DWAMR_BUILD_AOT=1 \
 		-DWAMR_BUILD_LIBC_WASI=0 \
-		-DWAMR_BUILD_FAST_INTERP=1 \
-		-DWAMR_BUILD_INTERP=1 \
+		-DWAMR_BUILD_FAST_INTERP=0 \
+		-DWAMR_BUILD_INTERP=0 \
 		-DWAMR_BUILD_JIT=0 \
-		-DWAMR_BUILD_FAST_JIT=1
-
+		-DWAMR_BUILD_FAST_JIT=0 \
+        -DWAMR_BUILD_DEBUG_AOT=1 \
+        -DWAMR_BUILD_TAIL_CALL=1 \
+        -DWAMR_BUILD_AOT_STACK_FRAME=1 \
+        -DWAMR_BUILD_MEMORY_PROFILING=1 \
+        -DWAMR_BUILD_DUMP_CALL_STACK=1
 	make -C $(WAMR_DIR)/lib -j16
 
 # $(GITHOOKS_DIR)/_/setup:

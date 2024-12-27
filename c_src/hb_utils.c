@@ -1,13 +1,7 @@
 #include "hb_beamr.h"
 
 
-wasm_val_t create_default_wasm_val() {
-    wasm_val_t val;
-    val.kind = WASM_I32;
-    val.of.i32 = 0;
-    return val;
-}
-
+// Returns the string name corresponding to the wasm type
 const char* get_wasm_type_name(wasm_valkind_t kind) {
     switch (kind) {
         case WASM_I32: return "i32";
@@ -18,6 +12,7 @@ const char* get_wasm_type_name(wasm_valkind_t kind) {
     }
 }
 
+// Returns the string name corresponding to the external type (e.g., func, global, table, memory)
 const char* wasm_externtype_to_kind_string(const wasm_externtype_t* type) {
     switch (wasm_externtype_kind(type)) {
         case WASM_EXTERN_FUNC: return "func";
@@ -28,7 +23,7 @@ const char* wasm_externtype_to_kind_string(const wasm_externtype_t* type) {
     }
 }
 
-// Helper function to convert wasm_valtype_t to char
+// Helper function to convert wasm_valtype_t to char (used for function signatures)
 char wasm_valtype_kind_to_char(const wasm_valtype_t* valtype) {
     switch (wasm_valtype_kind(valtype)) {
         case WASM_I32: return 'i';
@@ -42,6 +37,7 @@ char wasm_valtype_kind_to_char(const wasm_valtype_t* valtype) {
     }
 }
 
+// Converts a wasm_val to an Erlang term (based on its type)
 int wasm_val_to_erl_term(ErlDrvTermData* term, const wasm_val_t* val) {
     DRV_DEBUG("Adding wasm val to erl term");
     DRV_DEBUG("Val of: %d", val->of.i32);
@@ -68,6 +64,7 @@ int wasm_val_to_erl_term(ErlDrvTermData* term, const wasm_val_t* val) {
     }
 }
 
+// Converts an Erlang term to a wasm_val (converts based on type)
 int erl_term_to_wasm_val(wasm_val_t* val, ei_term* term) {
     DRV_DEBUG("Converting erl term to wasm val. Term: %d. Size: %d", term->value.i_val, term->size);
     switch (val->kind) {
@@ -90,13 +87,14 @@ int erl_term_to_wasm_val(wasm_val_t* val, ei_term* term) {
     return 0;
 }
 
+// Converts an array of Erlang terms to an array of wasm_vals
 int erl_terms_to_wasm_vals(wasm_val_vec_t* vals, ei_term* terms) {
     DRV_DEBUG("Converting erl terms to wasm vals");
     DRV_DEBUG("Vals: %d", vals->size);
-    for(int i = 0; i < vals->size; i++) {
+    for (int i = 0; i < vals->size; i++) {
         DRV_DEBUG("Converting term %d: %p", i, &vals->data[i]);
         int res = erl_term_to_wasm_val(&vals->data[i], &terms[i]);
-        if(res == -1) {
+        if (res == -1) {
             DRV_DEBUG("Failed to convert term to wasm val");
             return -1;
         }
@@ -104,10 +102,11 @@ int erl_terms_to_wasm_vals(wasm_val_vec_t* vals, ei_term* terms) {
     return 0;
 }
 
+// Decodes an Erlang list from a binary buffer
 ei_term* decode_list(char* buff, int* index) {
     int arity, type;
 
-    if(ei_get_type(buff, index, &type, &arity) == -1) {
+    if (ei_get_type(buff, index, &type, &arity) == -1) {
         DRV_DEBUG("Failed to get type");
         return NULL;
     }
@@ -115,26 +114,26 @@ ei_term* decode_list(char* buff, int* index) {
 
     ei_term* res = driver_alloc(sizeof(ei_term) * arity);
 
-    if(type == ERL_LIST_EXT) {
-        //DRV_DEBUG("Decoding list");
+    // If the type is a list, decode it
+    if (type == ERL_LIST_EXT) {
         ei_decode_list_header(buff, index, &arity);
-        //DRV_DEBUG("Decoded list header. Arity: %d", arity);
-        for(int i = 0; i < arity; i++) {
+        for (int i = 0; i < arity; i++) {
             ei_decode_ei_term(buff, index, &res[i]);
             DRV_DEBUG("Decoded term (assuming int) %d: %d", i, res[i].value.i_val);
         }
     }
-    else if(type == ERL_STRING_EXT) {
-        //DRV_DEBUG("Decoding list encoded as string");
+    // If the type is a string, decode it as a list of integers
+    else if (type == ERL_STRING_EXT) {
         unsigned char* str = driver_alloc(arity * sizeof(char) + 1);
         ei_decode_string(buff, index, str);
-        for(int i = 0; i < arity; i++) {
+        for (int i = 0; i < arity; i++) {
             res[i].ei_type = ERL_INTEGER_EXT;
             res[i].value.i_val = (long) str[i];
             DRV_DEBUG("Decoded term %d: %d", i, res[i].value.i_val);
         }
         driver_free(str);
-    }
+    } 
+    // Handle unknown types
     else {
         DRV_DEBUG("Unknown type: %d", type);
         return NULL;
@@ -143,17 +142,19 @@ ei_term* decode_list(char* buff, int* index) {
     return res;
 }
 
+// Retrieves the function signature from the external type and formats it as a string
 int get_function_sig(const wasm_externtype_t* type, char* type_str) {
     if (wasm_externtype_kind(type) == WASM_EXTERN_FUNC) {
         const wasm_functype_t* functype = wasm_externtype_as_functype_const(type);
         const wasm_valtype_vec_t* params = wasm_functype_params(functype);
         const wasm_valtype_vec_t* results = wasm_functype_results(functype);
 
-        if(!params || !results) {
+        if (!params || !results) {
             DRV_DEBUG("Export function params/results are NULL");
             return 0;
         }
 
+        // Format the function signature
         type_str[0] = '(';
         size_t offset = 1;
 
@@ -172,18 +173,21 @@ int get_function_sig(const wasm_externtype_t* type, char* type_str) {
     return 0;
 }
 
+// Locks the given ErlDrvMutex
 void drv_lock(ErlDrvMutex* mutex) {
     DRV_DEBUG("Locking: %s", erl_drv_mutex_name(mutex));
     erl_drv_mutex_lock(mutex);
     DRV_DEBUG("Locked: %s", erl_drv_mutex_name(mutex));
 }
 
+// Unlocks the given ErlDrvMutex
 void drv_unlock(ErlDrvMutex* mutex) {
     DRV_DEBUG("Unlocking: %s", erl_drv_mutex_name(mutex));
     erl_drv_mutex_unlock(mutex);
     DRV_DEBUG("Unlocked: %s", erl_drv_mutex_name(mutex));
 }
 
+// Signals the condition variable, setting ready to 1
 void drv_signal(ErlDrvMutex* mut, ErlDrvCond* cond, int* ready) {
     DRV_DEBUG("Signaling: %s. Pre-signal ready state: %d", erl_drv_cond_name(cond), *ready);
     drv_lock(mut);
@@ -193,6 +197,7 @@ void drv_signal(ErlDrvMutex* mut, ErlDrvCond* cond, int* ready) {
     DRV_DEBUG("Signaled: %s. Post-signal ready state: %d", erl_drv_cond_name(cond), *ready);
 }
 
+// Waits for the condition variable to be signaled, locking the mutex during the wait
 void drv_wait(ErlDrvMutex* mut, ErlDrvCond* cond, int* ready) {
     DRV_DEBUG("Started to wait: %s. Ready: %d", erl_drv_cond_name(cond), *ready);
     DRV_DEBUG("Mutex: %s", erl_drv_mutex_name(mut));

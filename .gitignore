@@ -36,3 +36,7 @@ TEST-data*
 test-cache/*
 
 .githooks/_/.setup
+
+c_cpp_properties.json
+wamrc
+build_wamrc.sh
