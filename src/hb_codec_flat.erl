@@ -6,15 +6,18 @@
 -include("include/hb.hrl").
 
 %% @doc Convert a flat map to a TABM.
-from(Bin) when is_binary(Bin) -> Bin;
 from(Map) when is_map(Map) ->
-    maps:fold(
-        fun(Path, Value, Acc) ->
-            inject_at_path(hb_path:term_to_path_parts(Path), from(Value), Acc)
-        end,
-        #{},
-        Map
-    ).
+    OldPriv = hb_private:from_message(Map),
+    NewMap =
+        maps:fold(
+            fun(Path, Value, Acc) ->
+                inject_at_path(hb_path:term_to_path_parts(Path), from(Value), Acc)
+            end,
+            #{},
+            maps:without([priv], Map)
+        ),
+    hb_private:set_priv(NewMap, OldPriv);
+from(AlreadyConverted) -> AlreadyConverted.
 
 %% Helper function to inject a value at a specific path in a nested map
 inject_at_path([Key], Value, Map) ->
@@ -26,28 +29,34 @@ inject_at_path([Key|Rest], Value, Map) ->
 %% @doc Convert a TABM to a flat map.
 to(Bin) when is_binary(Bin) -> Bin;
 to(Map) when is_map(Map) ->
-    maps:fold(
-        fun(Key, Value, Acc) ->
-            case to(Value) of
-                SubMap when is_map(SubMap) ->
-                    maps:fold(
-                        fun(SubKey, SubValue, InnerAcc) ->
-                            maps:put(
-                                hb_path:to_binary([Key, SubKey]),
-                                SubValue,
-                                InnerAcc
-                            )
-                        end,
-                        Acc,
-                        SubMap
-                    );
-                SimpleValue ->
-                    maps:put(hb_path:to_binary([Key]), SimpleValue, Acc)
-            end
-        end,
-        #{},
-        Map
-    ).
+    OldPriv = hb_private:from_message(Map),
+    NewMap =
+        maps:fold(
+            fun(Key, Value, Acc) ->
+                case to(Value) of
+                    SubMap when is_map(SubMap) ->
+                        maps:fold(
+                            fun(SubKey, SubValue, InnerAcc) ->
+                                maps:put(
+                                    hb_path:to_binary([Key, SubKey]),
+                                    SubValue,
+                                    InnerAcc
+                                )
+                            end,
+                            Acc,
+                            SubMap
+                        );
+                    SimpleValue ->
+                        maps:put(hb_path:to_binary([Key]), SimpleValue, Acc)
+                end
+            end,
+            #{},
+            maps:without([priv], Map)
+        ),
+    case map_size(OldPriv) of
+        0 -> NewMap;
+        _ -> hb_private:set_priv(NewMap, OldPriv)
+    end.
 
 %%% Tests
 

@@ -27,8 +27,10 @@ from(TX) when is_record(TX, tx) ->
         {<<"Converge-Type">>, <<"Binary">>} ->
             TX#tx.data
     end.
-do_from(RawTX) ->
+do_from(TXWithPriv) ->
     % Ensure the TX is fully deserialized.
+    RawTX = TXWithPriv#tx { priv = <<>> },
+    Priv = TXWithPriv#tx.priv,
     TX = ar_bundles:deserialize(ar_bundles:normalize(RawTX)), % <- Is norm necessary?
     % Get the raw fields and values of the tx record and pair them. Then convert 
     % the list of key-value pairs into a map, removing irrelevant fields.
@@ -66,7 +68,8 @@ do_from(RawTX) ->
         end,
     % Merge the data map with the rest of the TX map and remove any keys that
     % are not part of the message.
-    maps:without(?FILTERED_TAGS, maps:merge(DataMap, MapWithoutData)).
+    MsgWithoutPriv = maps:without(?FILTERED_TAGS, maps:merge(DataMap, MapWithoutData)),
+    hb_private:set_priv(MsgWithoutPriv, Priv).
 
 %% @doc Internal helper to translate a message to its #tx record representation,
 %% which can then be used by ar_bundles to serialize the message. We call the 
@@ -82,13 +85,15 @@ to(Binary) when is_binary(Binary) ->
         data = Binary
     };
 to(TX) when is_record(TX, tx) -> TX;
-to(TABM) when is_map(TABM) ->
+to(TABMWithPriv) when is_map(TABMWithPriv) ->
     % The path is a special case so we normalized it first. It may have been
     % modified by `hb_converge` in order to set it to the current key that is
     % being executed. We should check whether the path is in the
     % `priv/Converge/Original-Path` field, and if so, use that instead of the
     % stated path. This normalizes the path, such that the signed message will
     % continue to validate correctly.
+    Priv = hb_private:from_message(TABMWithPriv),
+    TABM = maps:without([priv], TABMWithPriv),
     M =
         case {maps:find(path, TABM), hb_private:from_message(TABM)} of
             {{ok, _}, #{ <<"Converge">> := #{ <<"Original-Path">> := Path } }} ->
@@ -185,6 +190,6 @@ to(TABM) when is_map(TABM) ->
             throw(Error)
     end,
     %?event({result, {explicit, Res}}),
-    Res;
+    Res#tx { priv = Priv };
 to(Other) ->
     throw(invalid_tx).

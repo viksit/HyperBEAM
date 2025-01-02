@@ -61,7 +61,8 @@
 
     %% The type of signature this transaction was signed with. A system field,
     %% not used by the protocol yet.
-    signature_type = {rsa, 65537}
+    signature_type = {rsa, 65537},
+    priv = #{}
 }).
 
 %% The hashing algorithm used to calculate wallet addresses.

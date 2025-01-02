@@ -310,7 +310,7 @@ match(Map1, Map2) ->
                             case Val1 == Val2 of
                                 true -> true;
                                 false ->
-                                    ?event(
+                                    ?event(debug,
                                         {value_mismatch,
                                             {key, Val1, Val2}
                                         }
@@ -322,7 +322,7 @@ match(Map1, Map2) ->
                 Keys1
             );
         false ->
-            ?event({keys_mismatch, {keys1, Keys1}, {keys2, Keys2}}),
+            ?event(debug, {keys_mismatch, {keys1, Keys1}, {keys2, Keys2}}),
             false
     end.
 	
@@ -352,7 +352,6 @@ minimize(Map, ExtraKeys) ->
     maps:filter(
         fun(Key, _) ->
             (not lists:member(hb_converge:key_to_binary(Key), NormKeys))
-                andalso (not hb_private:is_private(Key))
         end,
         maps:map(fun(_K, V) -> minimize(V) end, Map)
     ).
@@ -694,6 +693,26 @@ empty_string_in_tag_test(Codec) ->
     Decoded = convert(Encoded, converge, Codec, #{}),
     ?assert(match(Msg, Decoded)).
 
+priv_intact_test(Codec) ->
+    Msg = #{ a => 1, priv => #{ b => 2 } },
+    Encoded = convert(Msg, Codec, converge, #{}),
+    Decoded = convert(Encoded, converge, Codec, #{}),
+    ?assertEqual(#{ b => 2 }, hb_private:from_message(Decoded)).
+
+nested_priv_intact(Codec) ->
+    Msg =
+		#{ a =>
+			#{
+				value => 1,
+				priv =>
+					#{
+						b => 2
+					}
+			}
+		},
+    Encoded = convert(Msg, Codec, converge, #{}),
+    #{ a := #{ priv := P } } = convert(Encoded, converge, Codec, #{}),
+    ?assertEqual(#{ b => 2}, P).
 
 %%% Test helpers
 
@@ -721,26 +740,28 @@ generate_test_suite(Suite) ->
 
 message_suite_test_() ->
     generate_test_suite([
-        {"basic map codec test", fun basic_map_codec_test/1},
-        {"match test", fun match_test/1},
-        {"single layer message to encoding test", fun single_layer_message_to_encoding_test/1},
-        {"message with large keys test", fun message_with_large_keys_test/1},
-        {"nested message with large keys and data test", fun nested_message_with_large_keys_and_data_test/1},
-        {"simple nested message test", fun simple_nested_message_test/1},
-        {"nested message with large data test", fun nested_message_with_large_data_test/1},
-        {"deeply nested message with data test", fun deeply_nested_message_with_data_test/1},
-        {"structured field atom parsing test", fun structured_field_atom_parsing_test/1},
-        {"structured field decimal parsing test", fun structured_field_decimal_parsing_test/1},
-        {"binary to binary test", fun binary_to_binary_test/1},
-        {"nested structured fields test", fun nested_structured_fields_test/1},
-        {"nested message with large keys test", fun nested_message_with_large_keys_test/1},
-        {"message with simple list test", fun message_with_simple_list_test/1},
-        {"empty string in tag test", fun empty_string_in_tag_test/1},
-        {"signed item to message and back test", fun signed_message_encode_decode_verify_test/1},
-        {"signed item to tx and back test", fun signed_tx_encode_decode_verify_test/1},
-        {"signed deep serialize and deserialize test", fun signed_deep_tx_serialize_and_deserialize_test/1},
-        {"unsigned id test", fun unsigned_id_test/1}
+        {"Basic map codec test", fun basic_map_codec_test/1},
+        {"Match test", fun match_test/1},
+        {"Single layer message to encoding test", fun single_layer_message_to_encoding_test/1},
+        {"Message with large keys test", fun message_with_large_keys_test/1},
+        {"Nested message with large keys and data test", fun nested_message_with_large_keys_and_data_test/1},
+        {"Simple nested message test", fun simple_nested_message_test/1},
+        {"Nested message with large data test", fun nested_message_with_large_data_test/1},
+        {"Deeply nested message with data test", fun deeply_nested_message_with_data_test/1},
+        {"Structured field atom parsing test", fun structured_field_atom_parsing_test/1},
+        {"Structured field decimal parsing test", fun structured_field_decimal_parsing_test/1},
+        {"Binary to binary test", fun binary_to_binary_test/1},
+        {"Nested structured fields test", fun nested_structured_fields_test/1},
+        {"Nested message with large keys test", fun nested_message_with_large_keys_test/1},
+        {"Message with simple list test", fun message_with_simple_list_test/1},
+        {"Empty string in tag test", fun empty_string_in_tag_test/1},
+        {"Signed item to message and back test", fun signed_message_encode_decode_verify_test/1},
+        {"Signed item to tx and back test", fun signed_tx_encode_decode_verify_test/1},
+        {"Signed deep serialize and deserialize test", fun signed_deep_tx_serialize_and_deserialize_test/1},
+        {"Unsigned id test", fun unsigned_id_test/1},
+        {"Private element intact test", fun priv_intact_test/1},
+        {"Nested private element intact test", fun nested_priv_intact/1}
     ]).
 
 simple_test() ->
-    signed_message_encode_decode_verify_test(tx).
+    priv_intact_test(converge).

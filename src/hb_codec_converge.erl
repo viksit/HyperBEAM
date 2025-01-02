@@ -10,44 +10,47 @@
 %% @doc Convert a rich message into a 'Type-Annotated-Binary-Message' (TABM).
 from(Bin) when is_binary(Bin) -> Bin;
 from(Msg) when is_map(Msg) ->
-    maps:from_list(lists:flatten(
-        lists:map(
-            fun(Key) ->
-                case maps:find(Key, Msg) of
-                    {ok, <<>>} ->
-                        BinKey = hb_converge:key_to_binary(Key),
-                        {<<"Converge-Type:", BinKey/binary>>, <<"Empty-Binary">>};
-                    {ok, Value} when is_binary(Value) ->
-                        {Key, Value};
-                    {ok, Map} when is_map(Map) ->
-                        {Key, from(Map)};
-                    {ok, []} ->
-                        BinKey = hb_converge:key_to_binary(Key),
-                        {<<"Converge-Type:", BinKey/binary>>, <<"Empty-List">>};
-                    {ok, Value} when
-                            is_atom(Value) or is_integer(Value)
-                            or is_list(Value) ->
-                        ItemKey = hb_converge:key_to_binary(Key),
-                        {Type, BinaryValue} = encode_value(Value),
-                        [
-                            {<<"Converge-Type:", ItemKey/binary>>, Type},
-                            {ItemKey, BinaryValue}
-                        ];
-                    {ok, _} -> []
-                end
-            end,
-            lists:filter(
+    OldPriv = hb_private:from_message(Msg),
+    NewMsg =
+        maps:from_list(lists:flatten(
+            lists:map(
                 fun(Key) ->
-                    % Filter keys that the user could set directly, but
-                    % should be regenerated when moving msg -> TX, as well
-                    % as private keys.
-                    not lists:member(Key, ?REGEN_KEYS) andalso
-                        not hb_private:is_private(Key)
+                    case maps:find(Key, Msg) of
+                        {ok, <<>>} ->
+                            BinKey = hb_converge:key_to_binary(Key),
+                            {<<"Converge-Type:", BinKey/binary>>, <<"Empty-Binary">>};
+                        {ok, Value} when is_binary(Value) ->
+                            {Key, Value};
+                        {ok, Map} when is_map(Map) ->
+                            {Key, from(Map)};
+                        {ok, []} ->
+                            BinKey = hb_converge:key_to_binary(Key),
+                            {<<"Converge-Type:", BinKey/binary>>, <<"Empty-List">>};
+                        {ok, Value} when
+                                is_atom(Value) or is_integer(Value)
+                                or is_list(Value) ->
+                            ItemKey = hb_converge:key_to_binary(Key),
+                            {Type, BinaryValue} = encode_value(Value),
+                            [
+                                {<<"Converge-Type:", ItemKey/binary>>, Type},
+                                {ItemKey, BinaryValue}
+                            ];
+                        {ok, _} -> []
+                    end
                 end,
-                maps:keys(Msg)
+                lists:filter(
+                    fun(Key) ->
+                        % Filter keys that the user could set directly, but
+                        % should be regenerated when moving msg -> TX, as well
+                        % as private keys.
+                        not lists:member(Key, ?REGEN_KEYS) andalso
+                            not hb_private:is_private(Key)
+                    end,
+                    maps:keys(Msg)
+                )
             )
-        )
-    ));
+        )),
+    hb_private:set_priv(NewMsg, OldPriv);
 from(Other) -> hb_path:to_binary(Other).
 
 %% @doc Convert a TABM into a native HyperBEAM message.
@@ -56,6 +59,8 @@ to(TABM0) ->
     % First, handle special cases of empty items, which `ar_bundles` cannot
     % handle. Needs to be transformed into a list (unfortunately) so that we
     % can also remove the "Converge-Type:" prefix from the key.
+    OldPriv = hb_private:from_message(TABM0),
+    ?event({priv, OldPriv}),
     TABM1 =
         maps:from_list(
             lists:map(
@@ -73,7 +78,7 @@ to(TABM0) ->
     % 2. Decode any binary values that have a "Converge-Type:" prefix;
     % 3. Recursively decode any maps that we encounter;
     % 4. Return the remaining keys and values as a map.
-    hb_message:filter_default_keys(maps:filtermap(
+    Res = hb_message:filter_default_keys(maps:filtermap(
         fun(<<"Converge-Type:", _/binary>>, _) ->
             % Remove any keys from output that have a "Converge-Type:" prefix.
             false;
@@ -92,7 +97,10 @@ to(TABM0) ->
             {true, Value}
         end,
         TABM1
-    )).
+    )),
+    SetPriv = hb_private:set_priv(Res, OldPriv),
+    ?event({priv, SetPriv}),
+    SetPriv.
 
 %% @doc Convert a term to a binary representation, emitting its type for
 %% serialization as a separate tag.
