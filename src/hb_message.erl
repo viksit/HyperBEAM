@@ -711,8 +711,8 @@ nested_priv_intact(Codec) ->
 			}
 		},
     Encoded = convert(Msg, Codec, converge, #{}),
-    #{ a := #{ priv := P } } = convert(Encoded, converge, Codec, #{}),
-    ?assertEqual(#{ b => 2}, P).
+    A = hb_converge:get(<<"a">>, convert(Encoded, converge, Codec, #{}), #{}),
+    ?assertEqual(#{ b => 2}, hb_private:from_message(A)).
 
 %%% Test helpers
 
@@ -764,4 +764,4 @@ message_suite_test_() ->
     ]).
 
 simple_test() ->
-    priv_intact_test(converge).
+    nested_priv_intact(flat).
