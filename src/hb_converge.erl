@@ -1039,7 +1039,6 @@ default_module() -> dev_message.
 internal_opts(Opts) ->
     maps:merge(Opts, #{
         topic => converge_internal,
-        hashpath => ignore,
         cache_control => [<<"no-cache">>, <<"no-store">>],
         spawn_worker => false
     }).
