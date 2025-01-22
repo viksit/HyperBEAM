@@ -390,6 +390,43 @@ get_routes_test() ->
     {ok, Recvd} = Res,
     ?assertMatch(#{ <<"body">> := <<"our_node">> }, Recvd).
 
+add_route_http3_test() ->
+    Owner = ar_wallet:new(),
+    Node = hb_http_server:start_test_node(
+        #{
+            protocol => http3,
+            force_signed => false,
+            routes => [
+                #{
+                    <<"template">> => <<"/some/path">>,
+                    <<"node">> => <<"old">>,
+                    <<"priority">> => 10
+                }
+            ],
+            operator => ar_wallet:to_address(Owner)
+        }
+    ),
+    Res =
+        hb_http:post(
+            Node,
+            hb_message:sign(
+                #{
+                    <<"path">> => <<"/!Router@1.0/routes">>,
+                    <<"template">> => <<"/some/new/path">>,
+                    <<"node">> => <<"new">>,
+                    <<"priority">> => 15
+                },
+                Owner
+            ),
+            #{protocol => http3}
+        ),
+    ?event({post_res, Res}),
+    ?assertMatch({ok, #{ <<"body">> := <<"Route added.">> }}, Res),
+    GetRes = hb_http:get(Node, <<"/!Router@1.0/routes/2/node">>, #{}),
+    ?event({get_res, GetRes}),
+    {ok, Recvd} = GetRes,
+    ?assertMatch(#{ <<"body">> := <<"new">> }, Recvd).
+
 add_route_test() ->
     Owner = ar_wallet:new(),
     Node = hb_http_server:start_test_node(

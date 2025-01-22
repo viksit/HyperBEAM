@@ -32,7 +32,16 @@ init(Opts) ->
             type => worker,
             modules => [ar_http]
         },
-    {ok, {SupFlags, [GunChild | StoreChildren]}}.
+    NodeMessagesServerChild =
+        #{
+            id => hb_node_messages_server,
+            start => {hb_node_messages_server, start_link, []},
+            restart => permanent,
+            shutdown => 5000,
+            type => worker,
+            modules => [hb_node_messages_server]
+        },
+    {ok, {SupFlags, [GunChild, NodeMessagesServerChild | StoreChildren]}}.
 
 %% @doc Generate a child spec for stores in the given Opts.
 store_children(Store) when not is_list(Store) ->
