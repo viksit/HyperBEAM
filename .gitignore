@@ -28,8 +28,10 @@ node_modules
 !.vscode/*
 .vscode/c_cpp_properties.json
 
-c_src/*.o
-c_src/*.d
+native/hb_beamr/*.o
+native/hb_beamr/*.d
+native/dev_snp_nif/target
+
 priv/*
 .DS_STORE
 TEST-data*

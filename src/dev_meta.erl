@@ -1,98 +1,336 @@
-
 %%% @doc The hyperbeam meta device, which is the default entry point
-%%% for all messages processed by the machine. This device executes a 'path' of
-%%% functions upon a message, sequentially, returning the message resulting
-%%% from the last function.
-
-%%% The ideal API should support:
-%%% ```
-%%% GET /id/Execute/Report?1.Mode=Fast&2.Mode=Terse <- Edge case?
-%%% GET /id/Outbox/1/Target <- Getting results from a process. Common case.
-%%% GET /id/Execute/Output?Action=Transfer <- 'Normal' dry-run request.
-%%% POST /id/Execute/Output?Action=Transfer <- 'Normal' push request.
-%%% POST /id/Schedule <- Schedule the contained message to be executed.
-%%% GET /id/Schedule <- Get the schedule of a process by its ID.
-%%% POST /id/Schedule <- Send a new message to the schedule of a process.
-%%% POST /id/Push <- Push a new message on a process.
-%%% POST /Push <- Push a new message on the referenced message.
-%%% GET /Execute <- Execute an assignment on the referenced process?
-%%% GET /Thing/in/cache <- Get a thing from the cache by its path.'''
+%%% for all messages processed by the machine. This device executes a
+%%% Converge singleton request, after first applying the node's 
+%%% pre-processor, if set. The pre-processor can halt the request by
+%%% returning an error, or return a modified version if it deems necessary --
+%%% the result of the pre-processor is used as the request for the Converge
+%%% resolver. Additionally, a post-processor can be set, which is executed after
+%%% the Converge resolver has returned a result.
 -module(dev_meta).
--export([execute/2]).
+-export([handle/2, info/3]).
+%%% Helper functions for processors
+-export([all_signers/1]).
 -include("include/hb.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
-%% @doc Execute a message on hyperbeam.
-execute(CarrierMsg, S) ->
-    ?event({executing_message, CarrierMsg}),
-    {Msg, Path} = parse_carrier_msg(CarrierMsg, S),
-    execute_path(Path, Msg, S).
+%% @doc Normalize and route messages downstream based on their path. Messages
+%% with a `Meta` key are routed to the `handle_meta/2` function, while all
+%% other messages are routed to the `handle_converge/2` function.
+handle(NodeMsg, RawRequest) ->
+    ?event({raw_request, RawRequest, NodeMsg}),
+    NormRequest = hb_singleton:from(RawRequest),
+    ?event({processing_messages, NormRequest}),
+    handle_converge(RawRequest, NormRequest, NodeMsg).
 
-%% @doc Execute a path on a message, yielding a new message.
-execute_path([], Msg, _) -> {ok, Msg};
-execute_path([FuncName|Path], Msg, S) ->
-    ?event({meta_executing_on_path, {function, FuncName}, {path, Path}}),
-    Func = parse_path_to_func(FuncName),
-    execute_path(Path, hb_converge:resolve(Msg, Func, [Msg], S), S).
-
-parse_path_to_func(BinName) when is_binary(BinName) ->
-    binary_to_existing_atom(string:lowercase(BinName), utf8);
-parse_path_to_func(AtomName) when is_atom(AtomName) ->
-    AtomName.
-
-%% @doc Resolve the carrier message to an executable message, either by extracting
-%% from its body or reading from its referenced ID.
-parse_carrier_msg(CarrierMsg, S) ->
-    case lists:keyfind(<<"Device">>, 1, CarrierMsg#tx.tags) of
-        {_, _} ->
-            % If the carrier message itself contains a device, we should execute
-            % the path on that device.
-            ?event({carrier_msg_contains_device, CarrierMsg}),
-            {
-                path_from_carrier_message(CarrierMsg),
-                CarrierMsg
-            };
-        false ->
-            % Otherwise, we try to parse the message from the path + body.
-            load_executable_message_from_carrier(CarrierMsg, S)
+%% @doc Get/set the node message. If the request is a `POST`, we check that the
+%% request is signed by the owner of the node. If not, we return the node message
+%% as-is, aside all keys that are private (according to `hb_private`).
+info(_, Request, NodeMsg) ->
+    ?event({config_req, Request, NodeMsg}),
+    case hb_converge:get(<<"method">>, Request, NodeMsg) of
+        <<"GET">> ->
+            embed_status({ok, hb_private:reset(NodeMsg)});
+        <<"POST">> ->
+            ReqSigners = hb_message:signers(Request),
+            Owner =
+                hb_opts:get(
+                    operator,
+                    case hb_opts:get(priv_wallet, no_viable_wallet, NodeMsg) of
+                        no_viable_wallet -> unclaimed;
+                        Wallet -> ar_wallet:to_address(Wallet)
+                    end,
+                    NodeMsg
+                ),
+            case Owner == unclaimed orelse lists:member(Owner, ReqSigners) of
+                false ->
+                    ?event(auth, {set_node_message_fail, Request}),
+                    embed_status({error, <<"Unauthorized">>});
+                true ->
+                    ?event(auth, {set_node_message_success, Request}),
+                    hb_http_server:set_opts(
+                        Request#{
+                            http_server =>
+                                hb_opts:get(http_server, no_server, NodeMsg)
+                        }
+                    ),
+                    embed_status({ok, <<"OK">>})
+            end;
+        _ -> embed_status({error, <<"Unsupported Method">>})
     end.
 
-%% @doc The carrier message itself does not contain a device, so we try to
-%% load the message from the first element of the path, then apply the carrier
-%% message that. For example, `GET /id/Schedule?From=0&To=1' will result in
-%% `MessageWithID.Schedule(#{From => 0, To => 1}).'
-load_executable_message_from_carrier(CarrierMsg, #{ store := RawStore }) ->
-    Path = path_from_carrier_message(CarrierMsg),
-    Store =
-        case hb_opts:get(access_remote_cache_for_client) of
-            true -> RawStore;
-            false -> hb_store:scope(RawStore, local)
-        end,
-    load_path(Store, Path).
-
-%% @doc Load a path from the cache. Load the whole path if possible, 
-%% backing off to smaller parts of the path until a viable component
-%% (eventually just the message ID) is found.
-load_path(Store, PathParts) -> load_path(Store, PathParts, []).
-load_path(Store, PathParts, Unresolved) ->
-    ?event({loading_path, Store, PathParts, Unresolved}),
-    % First, try to read the path directly from the cache.
-    case hb_cache:read(Store, PathParts) of
-        {ok, Msg} -> {Msg, Unresolved};
-        not_found ->
-            % If that fails, try to read it as a message.
-            case hb_cache:read(Store, PathParts) of
-                {ok, Msg} -> {Msg, Unresolved};
-                not_found ->
-                    load_path(
-                        Store,
-                        lists:droplast(PathParts),
-                        Unresolved ++ [lists:last(PathParts)]
+%% @doc Handle a Converge request, which is a list of messages. We apply
+%% the node's pre-processor to the request first, and then resolve the request
+%% using the node's Converge implementation if its response was `ok`.
+%% After execution, we run the node's `postprocessor` message on the result of
+%% the request before returning the result it grants back to the user.
+handle_converge(Req, Msgs, NodeMsg) ->
+    % Apply the pre-processor to the request.
+    case resolve_processor(<<"preprocess">>, preprocessor, Req, Msgs, NodeMsg) of
+        {ok, PreProcMsg} ->
+            ?event({result_after_preprocessing, PreProcMsg}),
+            AfterPreprocOpts = hb_http_server:get_opts(NodeMsg),
+            % Resolve the request message.
+            {ok, Res} =
+                embed_status(
+                    hb_converge:resolve_many(
+                        PreProcMsg,
+                        AfterPreprocOpts#{ force_message => true }
                     )
-            end
+                ),
+            ?event({res, Res}),
+            AfterResolveOpts = hb_http_server:get_opts(NodeMsg),
+            % Apply the post-processor to the result.
+            maybe_sign(
+                embed_status(
+                    resolve_processor(
+                        <<"postprocess">>,
+                        postprocessor,
+                        Req,
+                        Res,
+                        AfterResolveOpts
+                    )
+                ),
+                NodeMsg
+            );
+        Res -> embed_status(Res)
     end.
 
-%% @doc Extract the components of the path from the carrier message.
-path_from_carrier_message(CarrierMsg) ->
-    {_, Path} = lists:keyfind(<<"Path">>, 1, CarrierMsg#tx.tags),
-    lists:filter(fun(Part) -> byte_size(Part) > 0 end,
-        binary:split(Path, <<"/">>, [global])).
+%% @doc execute a message from the node message upon the user's request.
+resolve_processor(PathKey, Processor, Req, Query, NodeMsg) ->
+    case hb_opts:get(Processor, undefined, NodeMsg) of
+        undefined -> {ok, Query};
+        ProcessorMsg ->
+            ?event({resolving_processor, PathKey, ProcessorMsg}),
+            Res = hb_converge:resolve(
+                ProcessorMsg,
+                #{
+                    <<"path">> => PathKey,
+                    <<"body">> => Query,
+                    <<"request">> => Req
+                },
+                NodeMsg#{ hashpath => ignore }
+            ),
+            ?event({preprocessor_result, Res}),
+            Res
+    end.
+
+%% @doc Wrap the result of a device call in a status.
+embed_status({Status, Res}) when is_map(Res) ->
+    {ok, Res#{ <<"status">> => hb_http:status_code(Status) }};
+embed_status({Status, Res}) when is_binary(Res) ->
+    {ok, #{ <<"status">> => hb_http:status_code(Status), <<"body">> => Res }}.
+
+%% @doc Sign the result of a device call if the node is configured to do so.
+maybe_sign({Status, Res}, NodeMsg) ->
+    {Status, maybe_sign(Res, NodeMsg)};
+maybe_sign(Res, NodeMsg) ->
+    ?event({maybe_sign, Res, NodeMsg}),
+    case hb_opts:get(force_signed, false, NodeMsg) of
+        true ->
+            hb_message:sign(
+                Res,
+                hb_opts:get(priv_wallet, no_viable_wallet, NodeMsg),
+                hb_opts:get(format, http, NodeMsg)
+            );
+        false -> Res
+    end.
+
+%%% External helpers
+
+%% @doc Return the signers of a list of messages.
+all_signers(Msgs) ->
+    lists:foldl(
+        fun(Msg, Acc) ->
+            Signers =
+                hb_converge:get(<<"signers">>, Msg, #{}, #{ hashpath => ignore }),
+            Acc ++ lists:map(fun hb_util:human_id/1, maps:values(Signers))
+        end,
+        [],
+        Msgs
+    ).
+
+%%% Tests
+
+%% @doc Test that we can get the node message.
+config_test() ->
+    Node = hb_http_server:start_test_node(#{ test_config_item => <<"test">> }),
+    {ok, Res} = hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?event({res, Res}),
+    ?assertEqual(<<"test">>, hb_converge:get(<<"test_config_item">>, Res, #{})).
+
+%% @doc Test that we can't get the node message if the requested key is private.
+priv_inaccessible_test() ->
+    Node = hb_http_server:start_test_node(
+        #{
+            test_config_item => <<"test">>,
+            priv_key => <<"BAD">>
+        }
+    ),
+    {ok, Res} = hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?event({res, Res}),
+    ?assertEqual(<<"test">>, hb_converge:get(<<"test_config_item">>, Res, #{})),
+    ?assertEqual(not_found, hb_converge:get(<<"priv_key">>, Res, #{})).
+
+%% @doc Test that we can't set the node message if the request is not signed by
+%% the owner of the node.
+unauthorized_set_node_msg_fails_test() ->
+    Node = hb_http_server:start_test_node(#{ priv_wallet => ar_wallet:new() }),
+    {ok, SetRes} =
+        hb_http:post(
+            Node,
+            hb_message:sign(
+                #{
+                    <<"path">> => <<"/!meta@1.0/info">>,
+                    <<"evil_config_item">> => <<"BAD">>
+                },
+                ar_wallet:new()
+            ),
+            #{}
+        ),
+    ?event({res, SetRes}),
+    {ok, Res} = hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?event({res, Res}),
+    ?assertEqual(not_found, hb_converge:get(<<"evil_config_item">>, Res, #{})).
+
+%% @doc Test that we can set the node message if the request is signed by the
+%% owner of the node.
+authorized_set_node_msg_succeeds_test() ->
+    Owner = ar_wallet:new(),
+    Node = hb_http_server:start_test_node(
+        #{
+            operator => ar_wallet:to_address(Owner),
+            test_config_item => <<"test">>
+        }
+    ),
+    {ok, SetRes} =
+        hb_http:post(
+            Node,
+            hb_message:sign(
+                #{
+                    <<"path">> => <<"/!meta@1.0/info">>,
+                    <<"test_config_item">> => <<"test2">>
+                },
+                Owner
+            ),
+            #{}
+        ),
+    ?event({res, SetRes}),
+    {ok, Res} = hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?event({res, Res}),
+    ?assertEqual(<<"test2">>, hb_converge:get(<<"test_config_item">>, Res, #{})).
+
+%% @doc Test that we can claim the node correctly and set the node message after.
+claim_node_test() ->
+    Owner = ar_wallet:new(),
+    Address = ar_wallet:to_address(Owner),
+    Node = hb_http_server:start_test_node(
+        #{
+            operator => unclaimed,
+            test_config_item => <<"test">>
+        }
+    ),
+    {ok, SetRes} =
+        hb_http:post(
+            Node,
+            hb_message:sign(
+                #{
+                    <<"path">> => <<"/!meta@1.0/info">>,
+                    <<"operator">> => Address
+                },
+                Owner
+            ),
+            #{}
+        ),
+    ?event({res, SetRes}),
+    {ok, Res} = hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?event({res, Res}),
+    ?assertEqual(Address, hb_converge:get(<<"operator">>, Res, #{})),
+    {ok, SetRes2} =
+        hb_http:post(
+            Node,
+            hb_message:sign(
+                #{
+                    <<"path">> => <<"/!meta@1.0/info">>,
+                    <<"test_config_item">> => <<"test2">>
+                },
+                Owner
+            ),
+            #{}
+        ),
+    ?event({res, SetRes2}),
+    {ok, Res2} = hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?event({res, Res2}),
+    ?assertEqual(<<"test2">>, hb_converge:get(<<"test_config_item">>, Res2, #{})).
+
+%% @doc Test that we can use a preprocessor upon a request.
+preprocessor_test() ->
+    Parent = self(),
+    Node = hb_http_server:start_test_node(
+        #{
+            preprocessor =>
+                #{
+                    <<"device">> => #{
+                        <<"preprocess">> =>
+                            fun(_, #{ <<"body">> := Msgs }, _) ->
+                                Parent ! ok,
+                                {ok, Msgs}
+                            end
+                    }
+                }
+        }),
+    hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?assert(receive ok -> true after 1000 -> false end).
+
+%% @doc Test that we can halt a request if the preprocessor returns an error.
+halt_request_test() ->
+    Node = hb_http_server:start_test_node(
+        #{
+            preprocessor =>
+                #{
+                    <<"device">> => #{
+                        <<"preprocess">> =>
+                            fun(_, _, _) ->
+                                {error, <<"Bad">>}
+                            end
+                    }
+                }
+        }),
+    {error, Res} = hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?assertEqual(<<"Bad">>, Res).
+
+%% @doc Test that a preprocessor can modify a request.
+modify_request_test() ->
+    Node = hb_http_server:start_test_node(
+        #{
+            preprocessor =>
+                #{
+                    <<"device">> => #{
+                        <<"preprocess">> =>
+                            fun(_, #{ <<"body">> := [M|Ms] }, _) ->
+                                {ok, [M#{ <<"added">> => <<"value">> }|Ms]}
+                            end
+                    }
+                }
+        }),
+    {ok, Res} = hb_http:get(Node, <<"/added">>, #{}),
+    ?event({res, Res}),
+    ?assertEqual(<<"value">>, hb_converge:get(<<"body">>, Res, #{})).
+
+%% @doc Test that we can use a postprocessor upon a request.
+postprocessor_test() ->
+    Parent = self(),
+    Node = hb_http_server:start_test_node(
+        #{
+            postprocessor =>
+                #{
+                    <<"device">> => #{
+                        <<"postprocess">> =>
+                            fun(_, #{ <<"body">> := Msgs }, _) ->
+                                Parent ! ok,
+                                {ok, Msgs}
+                            end
+                    }
+                }
+        }),
+    hb_http:get(Node, <<"/!meta@1.0/info">>, #{}),
+    ?assert(receive ok -> true after 1000 -> false end).
