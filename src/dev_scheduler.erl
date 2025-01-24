@@ -524,11 +524,12 @@ http_post_schedule_test() ->
     {ok, Res} =
         http_post_schedule_sign(
             N,
-            #{ <<"inner">> => <<"test-message">> },
+            #{<<"body">> => <<"test-message">>},
             PMsg,
             W
         ),
-    ?assertEqual(<<"test-message">>, hb_converge:get(<<"body/inner">>, Res, #{})),
+	?event({http_post_schedule_sign, Res}),
+    ?assertEqual(<<"test-message">>, hb_converge:get(<<"body">>, Res, #{})),
     ?assertMatch({ok, #{ <<"current-slot">> := 0 }}, http_get_slot(N, PMsg)).
 
 http_get_schedule_test() ->
