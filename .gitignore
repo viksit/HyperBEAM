@@ -27,12 +27,15 @@ node_modules
 *.bin
 !.vscode/*
 
-c_src/*.o
-c_src/*.d
+native/hb_beamr/*.o
+native/hb_beamr/*.d
+
+!test/snp-*.json
+
 priv/*
 .DS_STORE
 TEST-data*
 test-cache/*
-TEST-cache-**
+TEST-cache**
 
 .githooks/_/.setup
