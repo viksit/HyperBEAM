@@ -63,6 +63,7 @@ wasm_trap_t* wasm_handle_import(void* env, const wasm_val_vec_t* args, wasm_val_
     int msg_res = erl_drv_output_term(proc->port_term, msg, msg_index);
     // Wait for the response (we set this directly after the message was sent
     // so we have the lock, before Erlang sends us data back)
+    driver_free(msg);
     drv_wait(proc->current_import->response_ready, proc->current_import->cond, &proc->current_import->ready);
 
     DRV_DEBUG("Response ready");
