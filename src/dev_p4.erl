@@ -265,6 +265,35 @@ faff_test() ->
     ?assertEqual(<<"Hello, world!">>, hb_converge:get(<<"body">>, Res, #{})),
     ?assertMatch({error, _}, hb_http:get(Node, BadSignedReq, #{})).
 
+%% @doc Ensure that the balance is correctly reported from the underlying device.
+balance_test() ->
+    Wallet = ar_wallet:new(),
+    Address = hb_util:human_id(ar_wallet:to_address(Wallet)),
+    ProcessorMsg =
+        #{
+            <<"device">> => <<"p4@1.0">>,
+            <<"ledger_device">> => <<"simple-pay@1.0">>,
+            <<"pricing_device">> => <<"simple-pay@1.0">>
+        },
+    Opts =
+        #{
+            operator => Address,
+            simple_pay_ledger => #{ Address => 100 },
+            preprocessor => ProcessorMsg,
+            postprocessor => ProcessorMsg
+        },
+    Node = hb_http_server:start_node(Opts),
+    Res =
+        hb_http:get(
+            Node,
+            hb_message:attest(
+                #{ <<"path">> => <<"/~p4@1.0/balance">> },
+                Wallet
+            ),
+            #{}
+        ),
+    ?assertMatch({ok, #{ <<"body">> := 100 }}, Res).
+
 %% @doc Test that a non-chargable route is not charged for.
 non_chargable_route_test() ->
     Wallet = ar_wallet:new(),
