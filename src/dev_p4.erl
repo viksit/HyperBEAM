@@ -26,6 +26,7 @@
 %%% ```
 %%%             POST /credit?message=PaymentMessage&request=RequestMessage
 %%%             POST /debit?amount=PriceMessage&type=pre|post&request=RequestMessage
+%%%             GET /balance?request=RequestMessage
 %%% ```
 %%%
 %%% The `type` key is optional and defaults to `pre`. If `type` is set to `post`,
@@ -42,22 +43,32 @@
     #{ <<"template">> => <<"/~meta@1.0/*">> }
 ]).
 
+%% @doc Get the message(/device in a message) for a component of the framework
+%% from the given state.
+get_message(Key, State, NodeMsg) ->
+    case hb_converge:get(<<Key/binary, "_message">>, State, NodeMsg) of
+        not_found ->
+            case hb_converge:get(<<Key/binary, "_device">>, State, NodeMsg) of
+                not_found -> not_found;
+                DeviceID -> #{ <<"device">> => DeviceID }
+            end;
+        Msg -> Msg
+    end.
+
 %% @doc Estimate the cost of a transaction and decide whether to proceed with
 %% a request. The default behavior if `pricing_device` or `p4_balances` are
 %% not set is to proceed, so it is important that a user initialize them.
 preprocess(State, Raw, NodeMsg) ->
-    PricingDevice = hb_converge:get(<<"pricing_device">>, State, false, NodeMsg),
-    LedgerDevice = hb_converge:get(<<"ledger_device">>, State, false, NodeMsg),
+    PricingMsg = get_message(<<"pricing">>, State, NodeMsg),
+    LedgerMsg = get_message(<<"ledger">>, State, NodeMsg),
     Messages = hb_converge:get(<<"body">>, Raw, NodeMsg#{ hashpath => ignore }),
     Request = hb_converge:get(<<"request">>, Raw, NodeMsg),
     IsChargable = is_chargable_req(Request, NodeMsg),
-    ?event(payment, {preprocess_with_devices, PricingDevice, LedgerDevice, {chargable, IsChargable}}),
-    case {IsChargable, (PricingDevice =/= false) and (LedgerDevice =/= false)} of
+    ?event(payment, {preprocess_with_devices, PricingMsg, LedgerMsg, {chargable, IsChargable}}),
+    case {IsChargable, (PricingMsg =/= not_found) and (LedgerMsg =/= not_found)} of
         {false, _} -> {ok, Messages};
         {true, false} -> {ok, Messages};
         {true, true} ->
-            PricingMsg = #{ <<"device">> => PricingDevice },
-            LedgerMsg = #{ <<"device">> => LedgerDevice },
             PricingReq = #{
                 <<"path">> => <<"estimate">>,
                 <<"type">> => <<"pre">>,
@@ -114,8 +125,8 @@ preprocess(State, Raw, NodeMsg) ->
 
 %% @doc Postprocess the request after it has been fulfilled.
 postprocess(State, RawResponse, NodeMsg) ->
-    PricingDevice = hb_converge:get(<<"pricing_device">>, State, false, NodeMsg),
-    LedgerDevice = hb_converge:get(<<"ledger_device">>, State, false, NodeMsg),
+    PricingMsg = get_message(<<"pricing">>, State, NodeMsg),
+    LedgerMsg = get_message(<<"ledger">>, State, NodeMsg),
     Response =
         hb_converge:get(
             <<"body">>,
@@ -123,12 +134,10 @@ postprocess(State, RawResponse, NodeMsg) ->
             NodeMsg#{ hashpath => ignore }
         ),
     Request = hb_converge:get(<<"request">>, RawResponse, NodeMsg),
-    ?event(payment, {post_processing_with_devices, PricingDevice, LedgerDevice}),
-    case (PricingDevice =/= false) and (LedgerDevice =/= false) of
+    ?event(payment, {post_processing_with_devices, PricingMsg, LedgerMsg}),
+    case (PricingMsg =/= not_found) and (LedgerMsg =/= not_found) of
         false -> {ok, Response};
         true ->
-            PricingMsg = #{ <<"device">> => PricingDevice },
-            LedgerMsg = #{ <<"device">> => LedgerDevice },
             PricingReq = #{
                 <<"path">> => <<"price">>,
                 <<"type">> => <<"post">>,
@@ -176,14 +185,8 @@ postprocess(State, RawResponse, NodeMsg) ->
 
 %% @doc Get the balance of a user in the ledger.
 balance(_, Req, NodeMsg) ->
-    LedgerDevice =
-        hb_converge:get(
-            <<"preprocessor/ledger_device">>,
-            NodeMsg,
-            false,
-            NodeMsg
-        ),
-    LedgerMsg = #{ <<"device">> => LedgerDevice },
+    Preprocessor = hb_converge:get(<<"preprocessor">>, NodeMsg, NodeMsg),
+    LedgerMsg = get_message(<<"ledger">>, Preprocessor, NodeMsg),
     LedgerReq = #{
         <<"path">> => <<"balance">>,
         <<"request">> => Req
