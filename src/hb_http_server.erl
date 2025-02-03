@@ -183,7 +183,7 @@ test_opts(Opts) ->
                 }
             },
         priv_wallet => Wallet,
-        force_signed => true
+        force_signed => maps:get(force_signed, Opts, true)
     }.
 
 %% @doc Test that we can start the server, send a message, and get a response.
