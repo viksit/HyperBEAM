@@ -3,10 +3,10 @@
 %%% on the node, as well as orchestrating a payment ledger to calculate whether
 %%% the node should fulfil services for users.
 %%%
-%%% The device requires the following node message settings in order to function:
+%%% The device requires the following pre/postprocessor settings in order to function:
 %%%
-%%% - `p4_pricing_device`: The device that will estimate the cost of a request.
-%%% - `p4_ledger_device`: The device that will act as a payment ledger.
+%%% - `pricing-device`: The device that will estimate the cost of a request.
+%%% - `ledger-device`: The device that will act as a payment ledger.
 %%%
 %%% The pricing device should implement the following keys:
 %%% ```
@@ -46,9 +46,9 @@
 %% @doc Get the message(/device in a message) for a component of the framework
 %% from the given state.
 get_message(Key, State, NodeMsg) ->
-    case hb_converge:get(<<Key/binary, "_message">>, State, NodeMsg) of
+    case hb_converge:get(<<Key/binary, "-message">>, State, NodeMsg) of
         not_found ->
-            case hb_converge:get(<<Key/binary, "_device">>, State, NodeMsg) of
+            case hb_converge:get(<<Key/binary, "-device">>, State, NodeMsg) of
                 not_found -> not_found;
                 DeviceID -> #{ <<"device">> => DeviceID }
             end;
@@ -232,8 +232,8 @@ test_opts(Opts, PricingDev, LedgerDev) ->
     ProcessorMsg =
         #{
             <<"device">> => <<"p4@1.0">>,
-            <<"pricing_device">> => PricingDev,
-            <<"ledger_device">> => LedgerDev
+            <<"pricing-device">> => PricingDev,
+            <<"ledger-device">> => LedgerDev
         },
     Opts#{
         preprocessor => ProcessorMsg,
@@ -272,8 +272,8 @@ balance_test() ->
     ProcessorMsg =
         #{
             <<"device">> => <<"p4@1.0">>,
-            <<"ledger_device">> => <<"simple-pay@1.0">>,
-            <<"pricing_device">> => <<"simple-pay@1.0">>
+            <<"ledger-device">> => <<"simple-pay@1.0">>,
+            <<"pricing-device">> => <<"simple-pay@1.0">>
         },
     Opts =
         #{
@@ -300,8 +300,8 @@ non_chargable_route_test() ->
     Processor =
         #{
             <<"device">> => <<"p4@1.0">>,
-            <<"ledger_device">> => <<"simple-pay@1.0">>,
-            <<"pricing_device">> => <<"simple-pay@1.0">>
+            <<"ledger-device">> => <<"simple-pay@1.0">>,
+            <<"pricing-device">> => <<"simple-pay@1.0">>
         },
     Node = hb_http_server:start_node(
         #{
