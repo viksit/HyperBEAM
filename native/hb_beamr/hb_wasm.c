@@ -63,6 +63,7 @@ wasm_trap_t* wasm_handle_import(void* env, const wasm_val_vec_t* args, wasm_val_
     int msg_res = erl_drv_output_term(proc->port_term, msg, msg_index);
     // Wait for the response (we set this directly after the message was sent
     // so we have the lock, before Erlang sends us data back)
+    driver_free(msg);
     drv_wait(proc->current_import->response_ready, proc->current_import->cond, &proc->current_import->ready);
 
     DRV_DEBUG("Response ready");
@@ -93,6 +94,7 @@ wasm_trap_t* wasm_handle_import(void* env, const wasm_val_vec_t* args, wasm_val_
 
     // Clean up
     DRV_DEBUG("Cleaning up import response");
+    driver_free(proc->current_import->result_terms);
     erl_drv_cond_destroy(proc->current_import->cond);
     proc->current_import->cond = NULL;
     erl_drv_mutex_destroy(proc->current_import->response_ready);
@@ -160,7 +162,8 @@ void wasm_initialize_runtime(void* raw) {
     wasm_module_exports(proc->module, &exports);
 
     // Create Erlang lists for imports
-    ErlDrvTermData* init_msg = driver_alloc(sizeof(ErlDrvTermData) * (2 + (13 * imports.size) + (11 * exports.size)));
+    // The x10 multiplier should be replaced with the actual size of the structure
+    ErlDrvTermData* init_msg = driver_alloc(sizeof(ErlDrvTermData) * (2 + (13 * imports.size) + (11 * exports.size) * 10));
     int msg_i = 0;
     init_msg[msg_i++] = ERL_DRV_ATOM;
     init_msg[msg_i++] = atom_execution_result;
@@ -174,7 +177,6 @@ void wasm_initialize_runtime(void* raw) {
         const wasm_externtype_t* type = wasm_importtype_type(import);
 
         //DRV_DEBUG("Import: %s.%s", module_name->data, name->data);
-
         char* type_str = driver_alloc(256);
         // TODO: What happpens here?
         if(!get_function_sig(type, type_str)) {
@@ -350,6 +352,7 @@ void wasm_execute_function(void* raw) {
         drv_unlock(proc->is_running);
         return;
     }
+
 
     // Send the results back to Erlang
     DRV_DEBUG("Results size: %d", results.size);
