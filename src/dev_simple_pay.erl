@@ -29,7 +29,7 @@ estimate(_, EstimateReq, NodeMsg) ->
 
 %% @doc Preprocess a request by checking the ledger and charging the user. We 
 %% can charge the user at this stage because we know statically what the price
-%% will be
+%% will be.
 debit(_, RawReq, NodeMsg) ->
     case hb_converge:get(<<"type">>, RawReq, undefined, NodeMsg) of
         <<"post">> -> {ok, true};
