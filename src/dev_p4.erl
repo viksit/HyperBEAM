@@ -109,7 +109,7 @@ preprocess(State, Raw, NodeMsg) ->
                             ?event(payment, {pre_ledger_validation, false}),
                             {error, 
                                 #{
-                                    <<"status">> => 429,
+                                    <<"status">> => 402,
                                     <<"body">> => <<"Insufficient funds">>,
                                     <<"price">> => Price
                                 }
