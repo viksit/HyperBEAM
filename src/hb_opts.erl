@@ -72,6 +72,7 @@ default_message() ->
                 <<"p4@1.0">> => dev_p4,
                 <<"faff@1.0">> => dev_faff,
                 <<"simple-pay@1.0">> => dev_simple_pay,
+                <<"ledger-process@1.0">> => dev_ledger_process,
                 <<"snp@1.0">> => dev_snp,
                 <<"httpsig@1.0">> => dev_codec_httpsig,
                 <<"ans104@1.0">> => dev_codec_ans104,
