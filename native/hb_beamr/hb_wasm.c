@@ -162,7 +162,8 @@ void wasm_initialize_runtime(void* raw) {
     wasm_module_exports(proc->module, &exports);
 
     // Create Erlang lists for imports
-    ErlDrvTermData* init_msg = driver_alloc(sizeof(ErlDrvTermData) * (2 + (13 * imports.size) + (11 * exports.size)));
+    // The x10 multiplier should be replaced with the actual size of the structure
+    ErlDrvTermData* init_msg = driver_alloc(sizeof(ErlDrvTermData) * (2 + (13 * imports.size) + (11 * exports.size) * 10));
     int msg_i = 0;
     init_msg[msg_i++] = ERL_DRV_ATOM;
     init_msg[msg_i++] = atom_execution_result;
@@ -176,7 +177,6 @@ void wasm_initialize_runtime(void* raw) {
         const wasm_externtype_t* type = wasm_importtype_type(import);
 
         //DRV_DEBUG("Import: %s.%s", module_name->data, name->data);
-
         char* type_str = driver_alloc(256);
         // TODO: What happpens here?
         if(!get_function_sig(type, type_str)) {
@@ -352,6 +352,7 @@ void wasm_execute_function(void* raw) {
         drv_unlock(proc->is_running);
         return;
     }
+
 
     // Send the results back to Erlang
     DRV_DEBUG("Results size: %d", results.size);
