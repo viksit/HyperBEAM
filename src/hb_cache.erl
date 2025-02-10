@@ -172,7 +172,7 @@ store_read(Path, Store, Opts) ->
     ?event({reading, {path, PathToBin}, {resolved, ResolvedFullPath}}),
     case hb_store:type(Store, ResolvedFullPath) of
         simple -> hb_store:read(Store, ResolvedFullPath);
-        _ ->
+        composite ->
             case hb_store:list(Store, ResolvedFullPath) of
                 {ok, Subpaths} ->
                     ?event(
