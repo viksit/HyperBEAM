@@ -8,13 +8,16 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("public_key/include/public_key.hrl").
 
-%%--------------------------------------------------------------------
 %% @doc Initialize the green zone.
-%%
-%% This function sets up the node's cryptographic identity by ensuring that
-%% a wallet (keypair) exists and generating a shared AES key for secure communication.
-%% It then stores the wallet, AES key, and an empty trusted nodes list into the node's configuration.
-%%--------------------------------------------------------------------
+%% Sets up the node's cryptographic identity by ensuring that a wallet (keypair)
+%% exists and generating a shared AES key for secure communication. The wallet,
+%% AES key, and an empty trusted nodes list are stored in the node's configuration.
+%% @param M1 Ignored parameter.
+%% @param M2 Ignored parameter.
+%% @param Opts A map containing configuration options. If the wallet is not already
+%%             provided (under key `priv_wallet'), a new one will be created.
+%% @returns {ok, Msg} where Msg is a binary confirmation message.
+-spec init(M1 :: term(), M2 :: term(), Opts :: map()) -> {ok, binary()}.
 init(_M1, _M2, Opts) ->
     ?event(green_zone, {init, start}),
     % Check if a wallet exists; create one if absent.
@@ -38,12 +41,21 @@ init(_M1, _M2, Opts) ->
     ?event(green_zone, {init, complete}),
     {ok, <<"Green zone initialized successfully.">>}.
 
-%%--------------------------------------------------------------------
 %% @doc Join an existing green zone.
+%% Processes a join request by:
+%%   1. Extracting the attestation report, node address, and public key.
+%%   2. Verifying the attestation report.
+%%   3. Generating (or reusing) the shared AES key.
+%%   4. Updating the trusted nodes list with the joining node's details.
+%%   5. Encrypting the shared AES key with the joining node's public key.
 %%
-%% Processes a join request by extracting attestation details, verifying the report,
-%% updating the trusted nodes list, and encrypting the shared AES key.
-%%--------------------------------------------------------------------
+%% @param M1 The join request message containing attestation details.
+%% @param M2 Ignored parameter.
+%% @param Opts A map of configuration options.
+%% @returns {ok, Map} on success, where Map includes keys: status, message,
+%%          node_address, encrypted_payload, and public_key.
+%%          Returns {error, Reason} if the attestation fails.
+-spec join(M1 :: term(), M2 :: term(), Opts :: map()) -> {ok, map()} | {error, binary()}.
 join(M1, _M2, Opts) ->
     ?event(green_zone, {join, start}),
     % Extract the attestation report, node address, and node message.
@@ -105,10 +117,14 @@ join(M1, _M2, Opts) ->
             Error
     end.
 
-%%--------------------------------------------------------------------
-%% @private
 %% @doc Encrypt the shared AES key with the requester's public RSA key.
-%%--------------------------------------------------------------------
+%% This function encrypts the shared AES key using the RSA public key provided
+%% by the joining node. The RSA public key is extracted from a tuple and converted
+%% into a record suitable for the public_key module.
+%% @param AESKey The shared AES key (256-bit binary).
+%% @param RequesterPubKey The public RSA key of the requester.
+%% @returns The AES key encrypted with the RSA public key.
+-spec encrypt_payload(AESKey :: binary(), RequesterPubKey :: term()) -> binary().
 encrypt_payload(AESKey, RequesterPubKey) ->
     ?event(green_zone, {encrypt_payload, start}),
     case RequesterPubKey of
@@ -123,9 +139,20 @@ encrypt_payload(AESKey, RequesterPubKey) ->
             Encrypted
     end.
 
-%%--------------------------------------------------------------------
 %% @doc Retrieve and encrypt the node's private key.
-%%--------------------------------------------------------------------
+%% This function encrypts the node's private key using the shared AES key
+%% in AES-256-GCM mode. It returns the encrypted key along with the
+%% initialization vector (IV) needed for decryption.
+%% @param M1 Ignored parameter.
+%% @param M2 Ignored parameter.
+%% @param Opts A map of configuration options. Must include keys `priv_wallet'
+%%             and `priv_green_zone_aes'.
+%% @returns {ok, Map} on success, where Map contains:
+%%           - status: "success"
+%%           - encrypted_key: the encrypted private key (Base64 encoded)
+%%           - iv: the initialization vector (Base64 encoded)
+%%          Returns {error, Reason} if the node is not part of the green zone.
+-spec get_key(M1 :: term(), M2 :: term(), Opts :: map()) -> {ok, map()} | {error, binary()}.
 get_key(_M1, _M2, Opts) ->
     ?event(green_zone, {get_key, start}),
     % Retrieve the shared AES key and the node's wallet.
@@ -154,9 +181,20 @@ get_key(_M1, _M2, Opts) ->
             }}
     end.
 
-%%--------------------------------------------------------------------
 %% @doc Clone the identity of a target node.
-%%--------------------------------------------------------------------
+%% Allows a node to adopt the identity of a target node by:
+%%   1. Receiving the target node's encrypted private key and IV.
+%%   2. Decrypting the private key using the shared AES key.
+%%   3. Updating the local node's wallet with the target node's keypair.
+%% @param M1 The message containing the target node's encrypted private key and IV.
+%% @param M2 Ignored parameter.
+%% @param Opts A map of configuration options. Must include `priv_green_zone_aes'.
+%% @returns {ok, Map} on success, where Map includes:
+%%           - status: "success"
+%%           - message: confirmation text
+%%           - target_address: the target node's address
+%%          Returns {error, Reason} if decryption fails or the node is not part of the green zone.
+-spec become(M1 :: term(), M2 :: term(), Opts :: map()) -> {ok, map()} | {error, binary()}.
 become(M1, _M2, Opts) ->
     ?event(green_zone, {become, start}),
     % Extract the target address and the encrypted key and IV.
@@ -195,7 +233,7 @@ become(M1, _M2, Opts) ->
     end.
 
 %%--------------------------------------------------------------------
-%% @doc Define trusted software properties used in tests.
+%% Define trusted software properties used in tests.
 %% This map contains various attributes (like vcpus, firmware, kernel, etc.)
 %% that represent the expected configuration for trusted nodes.
 %%--------------------------------------------------------------------
@@ -210,12 +248,9 @@ become(M1, _M2, Opts) ->
     append => <<"8c8e78297694a44dfe61479e208263c8228937a6cb0bfb43203700c3388ceffe">>
 }).
 
-%%--------------------------------------------------------------------
 %% @doc Test Setup Helpers.
-%%
 %% These functions create a controlled environment for testing by setting up
 %% mocks for external modules and hardware-specific functions.
-%%--------------------------------------------------------------------
 setup_test_env() ->
     % Set up mocks for the HTTP server module.
     meck:new(hb_http_server, [passthrough]),
@@ -231,39 +266,24 @@ setup_test_env() ->
     ?event(green_zone, {test_setup, complete}),
     ok.
 
-%%--------------------------------------------------------------------
 %% @doc Clean up the test environment.
-%%
 %% Unload the mocks for external modules.
-%%--------------------------------------------------------------------
 cleanup_test_env() ->
     meck:unload(hb_http_server),
     meck:unload(dev_snp_nif),
     ?event(green_zone, {test_cleanup, complete}),
     ok.
 
-%%--------------------------------------------------------------------
 %% @doc Create a test node.
-%%
 %% Generates a new wallet and computes a human-readable node address from it.
-%% Returns a tuple {Wallet, NodeAddr}.
-%%--------------------------------------------------------------------
+%% @returns {Wallet, NodeAddr}
 create_test_node() ->
     Wallet = ar_wallet:new(),
     NodeAddr = hb_util:human_id(ar_wallet:to_address(Wallet)),
     ?event(green_zone, {create_test_node, complete}),
     {Wallet, NodeAddr}.
 
-%%%--------------------------------------------------------------------
-%%% @doc Individual Test Cases.
-%%%
-%%% The following functions are EUnit test cases that verify the behavior of the
-%%% green zone module functions: initialization, joining, key retrieval, and identity cloning.
-%%%--------------------------------------------------------------------
-
-%%--------------------------------------------------------------------
 %% @doc Test for green zone initialization.
-%%--------------------------------------------------------------------
 init_green_zone_test() ->
     setup_test_env(),
     try
@@ -280,9 +300,7 @@ init_green_zone_test() ->
         cleanup_test_env()
     end.
 
-%%--------------------------------------------------------------------
 %% @doc Test for joining a green zone.
-%%--------------------------------------------------------------------
 join_green_zone_test() ->
     setup_test_env(),
     try
@@ -325,9 +343,7 @@ join_green_zone_test() ->
         cleanup_test_env()
     end.
 
-%%--------------------------------------------------------------------
 %% @doc Test for retrieving the encrypted private key.
-%%--------------------------------------------------------------------
 get_key_test() ->
     setup_test_env(),
     try
@@ -346,9 +362,7 @@ get_key_test() ->
         cleanup_test_env()
     end.
 
-%%--------------------------------------------------------------------
 %% @doc Test for cloning a node's identity.
-%%--------------------------------------------------------------------
 become_node_test() ->
     setup_test_env(),
     try
