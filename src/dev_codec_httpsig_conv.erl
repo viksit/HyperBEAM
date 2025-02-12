@@ -2,22 +2,10 @@
 %%% @doc A codec for the that marshals TABM encoded messages to and from the
 %%% "HTTP" message structure.
 %%% 
-%%% The HTTP Message is an Erlang Map with the following shape:
-%%% #{ 
-%%%     headers => [
-%%%         {<<"example-header">>, <<"value">>}
-%%%     ],
-%%%     body: <<"some body">>
-%%% }
-%%% 
 %%% Every HTTP message is an HTTP multipart message.
 %%% See https://datatracker.ietf.org/doc/html/rfc7578
 %%%
 %%% For each TABM Key:
-%%% 
-%%% The TABM Key will be ignored if:
-%%% - The field is private (according to hb_private:is_private/1)
-%%% - The field is one of ?REGEN_KEYS
 %%%
 %%% The Key/Value Pair will be encoded according to the following rules:
 %%%     "signatures" -> {SignatureInput, Signature} header Tuples, each encoded
@@ -56,7 +44,7 @@ from(HTTP) ->
     Body = maps:get(<<"body">>, HTTP, <<>>),
     % First, parse all headers excluding the signature-related headers, as they
     % are handled separately.
-    Headers = maps:without([<<"body">>], HTTP),
+    Headers = maps:without([<<"body">>, <<"body-keys">>], HTTP),
     ContentType = maps:get(<<"content-type">>, Headers, undefined),
     % Next, we need to potentially parse the body and add to the TABM
     % potentially as sub-TABMs.
@@ -122,7 +110,12 @@ from_body(TABM, ContentType, Body) ->
             % potentially recursively as a sub-TABM, and then add it to the
             % current TABM
             {ok, FlattendTABM} = from_body_parts(TABM, Parts),
-            dev_codec_flat:from(FlattendTABM)
+            BodyKeys = maps:get(<<"body-keys">>, FlattendTABM, []),
+            Flat = dev_codec_flat:from(maps:without([<<"body-keys">>], FlattendTABM)),
+            case BodyKeys of
+                [] -> Flat;
+                _ -> maps:put(<<"body-keys">>, BodyKeys, Flat)
+            end
     end.
 
 from_body_parts (TABM, []) -> {ok, TABM};
@@ -189,10 +182,15 @@ from_body_parts(TABM, [Part | Rest]) ->
                         % We need to recursively parse the sub part into its own TABM
                         from(RestHeaders#{ <<"body">> => RawBody })
                 end,
-            from_body_parts(maps:put(PartName, ParsedPart, TABM), Rest)
+            CurrentBodyKeys = maps:get(<<"body-keys">>, TABM, []),
+            TABMNext = TABM#{
+                PartName => ParsedPart,
+                <<"body-keys">> => CurrentBodyKeys ++ [PartName]
+            },
+            from_body_parts(TABMNext, Rest)
     end.
 
-%% @doc Populate the `/attestations` key on the TABM with the dictionary of 
+%% @doc Populate the `/attestations' key on the TABM with the dictionary of 
 %% signatures and their corresponding inputs.
 attestations_from_signature(Map, _HPs, not_found, _RawSigInput) ->
     ?event({no_sigs_found_in_from, {msg, Map}}),
@@ -327,18 +325,24 @@ to(TABM, Opts) when is_map(TABM) ->
                     [],
                     PartList
                 ),
+                BodyKeys =
+                    iolist_to_binary(dev_codec_structured_conv:list(lists:map(
+                        fun ({PartName, _}) -> {item, {string, PartName}, []} end,
+                        PartList
+                    ))),
                 % Finally, join each part of the multipart body into a single binary
                 % to be used as the body of the Http Message
                 FinalBody = iolist_to_binary(lists:join(?CRLF, lists:reverse(BodyList))),
                 % Ensure we append the Content-Type to be a multipart response
-                Enc0#{ 
+                Enc0#{
+                    <<"body-keys">> => BodyKeys,
                     <<"content-type">> =>
                         <<"multipart/form-data; boundary=", "\"" , Boundary/binary, "\"">>,
                     <<"body">> => <<FinalBody/binary, ?CRLF/binary, "--", Boundary/binary, "--">>
                 }
         end,
-    % Add the content-digest to the HTTP message. `generate_content_digest/1`
-    % will return a map with the `content-digest` key set, but the body removed,
+    % Add the content-digest to the HTTP message. `generate_content_digest/1'
+    % will return a map with the `content-digest' key set, but the body removed,
     % so we merge the two maps together to maintain the body and the content-digest.
     Enc2 =
         maps:merge(
@@ -389,8 +393,8 @@ hashpaths_from_message(Msg) ->
         maps:get(<<"attestations">>, Msg, #{})
     ).
 
-%% @doc Extract all keys labelled `hashpath*` from the attestations, and add them
-%% to the HTTP message as `hashpath*` keys.
+%% @doc Extract all keys labelled `hashpath*' from the attestations, and add them
+%% to the HTTP message as `hashpath*' keys.
 extract_hashpaths(Map) ->
     maps:filter(
         fun (<<"hashpath", _/binary>>, _) -> true;

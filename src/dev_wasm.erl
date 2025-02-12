@@ -1,5 +1,5 @@
 %%% @doc A device that executes a WASM image on messages using the Memory-64 
-%%% preview standard. In the backend, this device uses `beamr`: An Erlang wrapper 
+%%% preview standard. In the backend, this device uses `beamr': An Erlang wrapper 
 %%% for WAMR, the WebAssembly Micro Runtime.
 %%% 
 %%% The device has the following requirements and interface:
@@ -38,7 +38,7 @@
 %%% API for other devices:
 -export([instance/3]).
 %%% Test API:
--export([cache_wasm_image/1]).
+-export([cache_wasm_image/1, cache_wasm_image/2]).
 -include("include/hb.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
@@ -111,7 +111,7 @@ init(M1, M2, Opts) ->
         )
     }.
 
-%% @doc Take a BEAMR import call and resolve it using `hb_converge`.
+%% @doc Take a BEAMR import call and resolve it using `hb_converge'.
 default_import_resolver(Msg1, Msg2, Opts) ->
     #{
         instance := WASM,
@@ -144,11 +144,11 @@ default_import_resolver(Msg1, Msg2, Opts) ->
 %% @doc Call the WASM executor with a message that has been prepared by a prior
 %% pass.
 compute(RawM1, M2, Opts) ->
-    % Normalize the message to have an open WASM instance, but no literal `State`.
+    % Normalize the message to have an open WASM instance, but no literal `State'.
     % The hashpath is not updated during this process. This allows us to take
     % two different messages and get the same result:
-    % - A message with a `State' key but no WASM instance in `priv/`.
-    % - A message with a WASM instance in `priv/` but no `State' key.
+    % - A message with a `State' key but no WASM instance in `priv/'.
+    % - A message with a WASM instance in `priv/' but no `State' key.
     {ok, M1} = normalize(RawM1, M2, Opts),
     ?event(running_compute),
     Prefix = dev_stack:prefix(M1, M2, Opts),
@@ -366,8 +366,8 @@ input_prefix_test() ->
         hb_converge:resolve(Priv, <<"import-resolver">>, #{})
     ).
 
-%% @doc Test that realistic prefixing for a `dev_process` works --
-%% including both inputs (from `Process/`) and outputs (to the 
+%% @doc Test that realistic prefixing for a `dev_process' works --
+%% including both inputs (from `Process/') and outputs (to the 
 %% Device-Key) work
 process_prefixes_test() ->
     init(),
@@ -498,9 +498,11 @@ state_export_and_restore_test() ->
 %%% Test helpers
 
 cache_wasm_image(Image) ->
+    cache_wasm_image(Image, #{}).
+cache_wasm_image(Image, Opts) ->
     {ok, Bin} = file:read_file(Image),
     Msg = #{ <<"body">> => Bin },
-    {ok, ID} = hb_cache:write(Msg, #{}),
+    {ok, ID} = hb_cache:write(Msg, Opts),
     #{
         <<"device">> => <<"WASM-64@1.0">>,
         <<"image">> => ID

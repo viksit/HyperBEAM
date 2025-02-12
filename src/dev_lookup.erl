@@ -1,5 +1,5 @@
 %%% @doc A device that looks up an ID from a local store and returns it, honoring
-%%% the `accept` key to return the correct format.
+%%% the `accept' key to return the correct format.
 -module(dev_lookup).
 -export([read/3]).
 -include("include/hb.hrl").
@@ -56,7 +56,7 @@ aos2_message_lookup_test() ->
 http_lookup_test() ->
     Store = {
         hb_store_fs,
-        #{ prefix => "TEST-cache" }
+        #{ prefix => "main-cache" }
     },
     Opts = #{ store => Store },
     Msg = #{ <<"test-key">> => <<"test-value">>, <<"data">> => <<"test-data">> },
