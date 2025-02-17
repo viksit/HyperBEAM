@@ -88,11 +88,11 @@ static void wasm_driver_stop(ErlDrvData raw) {
         proc->mod_bin->binary = NULL;
     }
 
-    // Free the binary data itself
+    // Free the memory allocated for mode
     if(proc->mod_bin->mode != NULL){
-        driver_free(proc->mod_bin->binary);
+        driver_free(proc->mod_bin->mode);
         DRV_DEBUG("Free memory allocated for WASM binary mode %d", sizeof(*proc->mod_bin->mode));
-        proc->mod_bin->binary = NULL;
+        proc->mod_bin->mode = NULL;
     }
 
     driver_free(proc->mod_bin);
