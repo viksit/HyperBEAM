@@ -96,6 +96,19 @@ static void wasm_driver_stop(ErlDrvData raw) {
     }
 
     driver_free(proc->mod_bin);
+
+    // Cleanup memory allocatef for current args
+    if(proc->current_args != NULL){
+        driver_free(proc->current_args);
+        proc->current_args = NULL;
+    }
+
+    // Clenup memory allocated for storing current function
+    if(proc->current_function != NULL){
+        driver_free(proc->current_function);
+        proc->current_function = NULL;
+    }
+
     DRV_DEBUG("Freeing proc");
     driver_free(proc);
     DRV_DEBUG("Freed proc");
