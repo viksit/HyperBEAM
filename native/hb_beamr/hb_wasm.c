@@ -339,6 +339,8 @@ void wasm_execute_function(void* raw) {
     const wasm_valtype_vec_t* result_types = wasm_functype_results(func_type);
 
     wasm_val_vec_t args, results;
+
+    // Also cleared below
     wasm_val_vec_new_uninitialized(&args, param_types->size);
     args.num_elems = param_types->num_elems;
     // CONV: ei_term* -> wasm_val_vec_t
@@ -358,6 +360,7 @@ void wasm_execute_function(void* raw) {
         return;
     }
 
+    // cleared below
     wasm_val_vec_new_uninitialized(&results, result_types->size);
     results.num_elems = result_types->num_elems;
     for (size_t i = 0; i < result_types->size; i++) {
@@ -369,7 +372,6 @@ void wasm_execute_function(void* raw) {
     // Call the function
     DRV_DEBUG("Calling function: %s", function_name);
     wasm_trap_t* trap = wasm_func_call(func, &args, &results);
-    
 
     if (trap) {
         wasm_message_t trap_msg;
@@ -427,6 +429,9 @@ void wasm_execute_function(void* raw) {
     DRV_DEBUG("Msg: %d", response_msg_res);
 
     wasm_val_vec_delete(&results);
+    wasm_val_vec_delete(&args);
+    
+    driver_free(proc->current_import);
     proc->current_import = NULL;
 
 	DRV_DEBUG("Unlocking is_running mutex: %p", proc->is_running);
