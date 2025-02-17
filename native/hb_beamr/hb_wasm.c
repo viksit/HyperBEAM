@@ -10,7 +10,13 @@ extern ErlDrvTermData atom_execution_result;
 void wasm_func_new_with_env_finalizer(void* env){
     ImportHook* hook = (ImportHook*) env;
     DRV_DEBUG("Free %d bytes (allocated for imported function stub)", sizeof(*hook));
+
+    // Also clean up the signature, that is a type_str.
+    if(hook->signature){
+        driver_free(hook->signature);
+    }
     driver_free(hook);
+
 }
 
 wasm_trap_t* wasm_handle_import(void* env, const wasm_val_vec_t* args, wasm_val_vec_t* results) {
@@ -188,9 +194,10 @@ void wasm_initialize_runtime(void* raw) {
 
         //DRV_DEBUG("Import: %s.%s", module_name->data, name->data);
 
-        char* imported_fun_type_str = driver_alloc(256);
+        // cleaned by the wasm_func_new_with_env_finalizer
+        char* import_type_str = driver_alloc(256);
         // TODO: What happpens here?
-        if(!get_function_sig(type, imported_fun_type_str)) {
+        if(!get_function_sig(type, import_type_str)) {
             // TODO: Handle other types of imports?
             continue;
         }
@@ -204,18 +211,18 @@ void wasm_initialize_runtime(void* raw) {
         init_msg[msg_i++] = (ErlDrvTermData)name->data;
         init_msg[msg_i++] = name->size - 1;
         init_msg[msg_i++] = ERL_DRV_STRING;
-        init_msg[msg_i++] = (ErlDrvTermData)imported_fun_type_str;
-        // init_msg[msg_i++] = strlen(imported_fun_type_str);
-        init_msg[msg_i++] = 30;
+        init_msg[msg_i++] = (ErlDrvTermData)import_type_str;
+        init_msg[msg_i++] = strlen(import_type_str);
         init_msg[msg_i++] = ERL_DRV_TUPLE;
         init_msg[msg_i++] = 4;
         
-        DRV_DEBUG("Creating callback for %s.%s [%s]", module_name->data, name->data, imported_fun_type_str);
+        DRV_DEBUG("Creating callback for %s.%s [%s]", module_name->data, name->data, import_type_str);
+        // the hook is cleared by wasm_func_new_with_env_finalizer
         ImportHook* hook = driver_alloc(sizeof(ImportHook));
         hook->module_name = module_name->data;
         hook->field_name = name->data;
         hook->proc = proc;
-        hook->signature = imported_fun_type_str;
+        hook->signature = import_type_str;
 
         hook->stub_func =
             wasm_func_new_with_env(
