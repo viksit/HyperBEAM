@@ -73,13 +73,13 @@ prep_call(M1, M2, Opts) ->
                     {<<"Block-Height">>, BlockHeight}
                 ]
         ),
-    MsgJson = jiffy:encode({MsgProps}),
+    MsgJson = hb_json:encode({MsgProps}),
     {ok, MsgJsonPtr} = hb_beamr_io:write_string(Instance, MsgJson),
     ProcessProps =
         normalize_props(
             [{<<"Process">>, message_to_json_struct(Process)}]
         ),
-    ProcessJson = jiffy:encode({ProcessProps}),
+    ProcessJson = hb_json:encode({ProcessProps}),
     {ok, ProcessJsonPtr} = hb_beamr_io:write_string(Instance, ProcessJson),
     {ok,
         hb_converge:set(
@@ -203,7 +203,7 @@ message_to_json_struct(RawMsg, Features) ->
 %% @doc Translates a compute result -- either from a WASM execution using the 
 %% JSON-Iface, or from a `Legacy' CU -- and transforms it into a result message.
 json_to_message(JSON, Opts) when is_binary(JSON) ->
-    json_to_message(jiffy:decode(JSON, [return_maps]), Opts);
+    json_to_message(hb_json:decode(JSON, [return_maps]), Opts);
 json_to_message(Resp, Opts) when is_map(Resp) ->
     {ok, Data, Messages} = normalize_results(Resp),
     Output = 
@@ -302,7 +302,7 @@ results(M1, _M2, Opts) ->
         <<"ok">> ->
             [Ptr] = hb_converge:get(<<"results/wasm/output">>, M1, Opts),
             {ok, Str} = hb_beamr_io:read_string(Instance, Ptr),
-            try jiffy:decode(Str, [return_maps]) of
+            try hb_json:decode(Str, [return_maps]) of
                 #{<<"ok">> := true, <<"response">> := Resp} ->
                     {ok, ProcessedResults} = json_to_message(Resp, Opts),
                     PostProcessed = postprocess_outbox(ProcessedResults, Proc, Opts),

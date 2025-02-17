@@ -384,7 +384,7 @@ serialize(RawTX, binary) ->
     >>;
 serialize(TX, json) ->
     true = enforce_valid_tx(TX),
-    jiffy:encode(hb_message:convert(TX, <<"ans104@1.0">>, #{})).
+    hb_json:encode(hb_message:convert(TX, <<"ans104@1.0">>, #{})).
 
 %% @doc Take an item and ensure that it is of valid form. Useful for ensuring
 %% that a message is viable for serialization/deserialization before execution.
@@ -564,19 +564,19 @@ new_manifest(Index) ->
             {<<"data-protocol">>, <<"bundle-map">>},
             {<<"variant">>, <<"0.0.1">>}
         ],
-        data = jiffy:encode(Index)
+        data = hb_json:encode(Index)
     }),
     TX.
 
 manifest(Map) when is_map(Map) -> Map;
 manifest(#tx { manifest = undefined }) -> undefined;
 manifest(#tx { manifest = ManifestTX }) ->
-    jiffy:decode(ManifestTX#tx.data, [return_maps]).
+    hb_json:decode(ManifestTX#tx.data, [return_maps]).
 
 parse_manifest(Item) when is_record(Item, tx) ->
     parse_manifest(Item#tx.data);
 parse_manifest(Bin) ->
-    jiffy:decode(Bin, [return_maps]).
+    hb_json:decode(Bin, [return_maps]).
 
 %% @doc Only RSA 4096 is currently supported.
 %% Note: the signature type '1' corresponds to RSA 4096 -- but it is is written in
@@ -679,7 +679,7 @@ deserialize(Binary, binary) ->
 %end;
 deserialize(Bin, json) ->
     try
-        Map = jiffy:decode(Bin, [return_maps]),
+        Map = hb_json:decode(Bin, [return_maps]),
         hb_message:convert(Map, <<"ans104@1.0">>, #{})
     catch
         _:_:_Stack ->
@@ -722,7 +722,7 @@ maybe_unbundle_map(Bundle) ->
                 detached -> Bundle#tx { data = detached };
                 Items ->
                     MapItem = find_single_layer(hb_util:decode(MapTXID), Items),
-                    Map = jiffy:decode(MapItem#tx.data, [return_maps]),
+                    Map = hb_json:decode(MapItem#tx.data, [return_maps]),
                     Bundle#tx{
                         manifest = MapItem,
                         data =

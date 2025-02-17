@@ -626,7 +626,7 @@ http_get_json_schedule_test() ->
     {ok, Schedule} = http_get_schedule(Node, PMsg, 0, 10, <<"application/aos-2">>),
     ?event({schedule, Schedule}),
     JSON = hb_converge:get(<<"body">>, Schedule, #{}),
-    Assignments = jiffy:decode(JSON, [return_maps]),
+    Assignments = hb_json:decode(JSON, [return_maps]),
     ?assertEqual(
         11, % +1 for the hashpath
         length(maps:get(<<"edges">>, Assignments))

@@ -75,7 +75,7 @@ arweave_timestamp() ->
                 httpc:request(
                     <<(hb_opts:get(gateway))/binary, "/block/current">>
                 ),
-            {Fields} = jiffy:decode(Body),
+            {Fields} = hb_json:decode(Body),
             {_, Timestamp} = lists:keyfind(<<"timestamp">>, 1, Fields),
             {_, Hash} = lists:keyfind(<<"indep_hash">>, 1, Fields),
             {_, Height} = lists:keyfind(<<"height">>, 1, Fields),
@@ -111,7 +111,7 @@ upload(HyperbeamMsg) ->
     % of
     %     {ok, {{_, 200, _}, _, Body}} ->
     %         ?event(upload_success),
-    %         {ok, jiffy:decode(Body, [return_maps])};
+    %         {ok, hb_json:decode(Body, [return_maps])};
     %     Response ->
     %         ?event(upload_error),
     %         {error, bundler_http_error, Response}
@@ -139,7 +139,7 @@ format_path_opt(Val) when is_integer(Val) ->
     integer_to_list(Val).
 
 parse_result_set(Body) ->
-    {JSONStruct} = jiffy:decode(Body),
+    {JSONStruct} = hb_json:decode(Body),
     {_, {PageInfoStruct}} = lists:keyfind(<<"pageInfo">>, 1, JSONStruct),
     {_, HasNextPage} = lists:keyfind(<<"hasNextPage">>, 1, PageInfoStruct),
     {_, EdgesStruct} = lists:keyfind(<<"edges">>, 1, JSONStruct),

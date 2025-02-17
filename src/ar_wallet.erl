@@ -77,7 +77,7 @@ new_keyfile(KeyType, WalletName) ->
                 {[Expnt, Pb], [Expnt, Pb, Prv, P1, P2, E1, E2, C]} =
                     crypto:generate_key(rsa, {?RSA_PRIV_KEY_SZ, PublicExpnt}),
                 Ky =
-                    jiffy:encode(
+                    hb_json:encode(
                         {
                             [
                                 {kty, <<"RSA">>},
@@ -100,7 +100,7 @@ new_keyfile(KeyType, WalletName) ->
                 PubPointMid = byte_size(PubPoint) div 2,
                 <<X:PubPointMid/binary, Y:PubPointMid/binary>> = PubPoint,
                 Ky =
-                    jiffy:encode(
+                    hb_json:encode(
                         {
                             [
                                 {kty, <<"EC">>},
@@ -115,7 +115,7 @@ new_keyfile(KeyType, WalletName) ->
             {?EDDSA_SIGN_ALG, ed25519} ->
                 {{_, Prv, Pb}, _} = new(KeyType),
                 Ky =
-                    jiffy:encode(
+                    hb_json:encode(
                         {
                             [
                                 {kty, <<"OKP">>},
@@ -160,7 +160,7 @@ load_key(Addr) ->
 %% @doc Extract the public and private key from a keyfile.
 load_keyfile(File) ->
     {ok, Body} = file:read_file(File),
-    {Key} = jiffy:decode(Body),
+    {Key} = hb_json:decode(Body),
     {Pub, Priv, KeyType} =
         case lists:keyfind(<<"kty">>, 1, Key) of
             {<<"kty">>, <<"EC">>} ->
