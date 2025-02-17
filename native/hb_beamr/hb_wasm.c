@@ -257,6 +257,8 @@ void wasm_initialize_runtime(void* raw) {
 
     // Refresh the exports now that we have an instance
     wasm_module_exports(proc->module, &exports);
+
+    char** export_type_str = driver_alloc(sizeof(char*) * exports.size);
     for (size_t i = 0; i < exports.size; i++) {
         const wasm_exporttype_t* export = exports.data[i];
         const wasm_name_t* name = wasm_exporttype_name(export);
@@ -274,7 +276,9 @@ void wasm_initialize_runtime(void* raw) {
 
         }
 
+        // cleared below in the same function
         char* type_str = driver_alloc(256);
+        export_type_str[i] = type_str;
         if ( !get_function_sig(type, type_str) ){
             DRV_DEBUG("Could not find function sig %s", type_str);
             
@@ -305,7 +309,11 @@ void wasm_initialize_runtime(void* raw) {
     DRV_DEBUG("Sending init message to Erlang. Elements: %d", msg_i);
     int send_res = erl_drv_output_term(proc->port_term, init_msg, msg_i);
     DRV_DEBUG("Send result: %d", send_res);
-
+    // clean up export type strings
+    for (int i = 0; i < exports.size; i++) {
+        driver_free(export_type_str[i]);
+    }
+    driver_free(export_type_str);
     proc->current_import = NULL;
     proc->is_initialized = 1;
     drv_unlock(proc->is_running);
