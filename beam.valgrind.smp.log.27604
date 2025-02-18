@@ -1,0 +1,309 @@
+==27656== Memcheck, a memory error detector
+==27656== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==27656== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==27656== Command: /libs/otp_src_27.0/bin/x86_64-pc-linux-gnu/beam.valgrind.smp -S 6:6 -SDcpu 6:6 -JPperf true -- -root /libs/otp_src_27.0 -bindir /libs/otp_src_27.0/bin/x86_64-pc-linux-gnu -progname /libs/otp_src_27.0/bin/cerl\ -valgrind -- -home /root -- -emu_type valgrind -- -pa _build/default/lib/accept/ebin _build/default/lib/b64fast/ebin _build/default/lib/cowboy/ebin _build/default/lib/cowlib/ebin _build/default/lib/gun/ebin _build/default/lib/hb/ebin _build/default/lib/jiffy/ebin _build/default/lib/prometheus/ebin _build/default/lib/prometheus_cowboy/ebin _build/default/lib/prometheus_httpd/ebin _build/default/lib/quantile_estimator/ebin _build/default/lib/quicer/ebin _build/default/lib/ranch/ebin _build/default/lib/rocksdb/ebin _build/default/lib/snabbkaffe/ebin --
+==27656== Parent PID: 27604
+==27656== 
+==27656== Warning: set address range perms: large range [0x51b3000, 0x451b3000) (noaccess)
+==27656== warning: connection to image /tmp/jit-27656.dump failed
+==27656==          cannot read program headers 
+==27656== 
+==27656== HEAP SUMMARY:
+==27656==     in use at exit: 57,453,984 bytes in 58,531 blocks
+==27656==   total heap usage: 1,118,124 allocs, 1,059,593 frees, 400,025,940 bytes allocated
+==27656== 
+==27656== 128 bytes in 8 blocks are definitely lost in loss record 2,300 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FE76: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C6C286: wasm_val_vec_new_uninitialized (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C695F7: wasm_execute_function (hb_wasm.c:320)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 134 (32 direct, 102 indirect) bytes in 1 blocks are definitely lost in loss record 2,301 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C673EF: wasm_driver_output (hb_beamr.c:116)
+==27656==    by 0x502722: call_driver_output (io.c:1509)
+==27656==    by 0x509678: erts_port_output (io.c:2052)
+==27656==    by 0x50B085: erts_port_command (io.c:3994)
+==27656==    by 0x4F8E12: do_send (bif.c:2320)
+==27656==    by 0x4FC65E: erl_send (bif.c:2586)
+==27656==    by 0x4FC922: send_2 (bif.c:2532)
+==27656==    by 0x471B662E: ???
+==27656==    by 0x5134547: ???
+==27656== 
+==27656== 134 (32 direct, 102 indirect) bytes in 1 blocks are definitely lost in loss record 2,302 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C673EF: wasm_driver_output (hb_beamr.c:116)
+==27656==    by 0x502722: call_driver_output (io.c:1509)
+==27656==    by 0x509678: erts_port_output (io.c:2052)
+==27656==    by 0x50B085: erts_port_command (io.c:3994)
+==27656==    by 0x4F8E12: do_send (bif.c:2320)
+==27656==    by 0x4FC65E: erl_send (bif.c:2586)
+==27656==    by 0x4FC922: send_2 (bif.c:2532)
+==27656==    by 0x471B662E: ???
+==27656==    by 0x51725577: ???
+==27656== 
+==27656== 134 (32 direct, 102 indirect) bytes in 1 blocks are definitely lost in loss record 2,303 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C673EF: wasm_driver_output (hb_beamr.c:116)
+==27656==    by 0x502722: call_driver_output (io.c:1509)
+==27656==    by 0x509678: erts_port_output (io.c:2052)
+==27656==    by 0x50B085: erts_port_command (io.c:3994)
+==27656==    by 0x4F8E12: do_send (bif.c:2320)
+==27656==    by 0x4FC65E: erl_send (bif.c:2586)
+==27656==    by 0x4FC922: send_2 (bif.c:2532)
+==27656==    by 0x471B662E: ???
+==27656==    by 0x4DB297E7: ???
+==27656== 
+==27656== 134 (32 direct, 102 indirect) bytes in 1 blocks are definitely lost in loss record 2,304 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C673EF: wasm_driver_output (hb_beamr.c:116)
+==27656==    by 0x502722: call_driver_output (io.c:1509)
+==27656==    by 0x509678: erts_port_output (io.c:2052)
+==27656==    by 0x50B085: erts_port_command (io.c:3994)
+==27656==    by 0x4F8E12: do_send (bif.c:2320)
+==27656==    by 0x4FC65E: erl_send (bif.c:2586)
+==27656==    by 0x4FC922: send_2 (bif.c:2532)
+==27656==    by 0x471B662E: ???
+==27656==    by 0x4C21BDE7: ???
+==27656== 
+==27656== 134 (32 direct, 102 indirect) bytes in 1 blocks are definitely lost in loss record 2,305 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C673EF: wasm_driver_output (hb_beamr.c:116)
+==27656==    by 0x502722: call_driver_output (io.c:1509)
+==27656==    by 0x509678: erts_port_output (io.c:2052)
+==27656==    by 0x50B085: erts_port_command (io.c:3994)
+==27656==    by 0x4F8E12: do_send (bif.c:2320)
+==27656==    by 0x4FC65E: erl_send (bif.c:2586)
+==27656==    by 0x4FC922: send_2 (bif.c:2532)
+==27656==    by 0x471B662E: ???
+==27656==    by 0x4DEE4047: ???
+==27656== 
+==27656== 134 (32 direct, 102 indirect) bytes in 1 blocks are definitely lost in loss record 2,306 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C673EF: wasm_driver_output (hb_beamr.c:116)
+==27656==    by 0x502722: call_driver_output (io.c:1509)
+==27656==    by 0x509678: erts_port_output (io.c:2052)
+==27656==    by 0x50B085: erts_port_command (io.c:3994)
+==27656==    by 0x4F8E12: do_send (bif.c:2320)
+==27656==    by 0x4FC65E: erl_send (bif.c:2586)
+==27656==    by 0x4FC922: send_2 (bif.c:2532)
+==27656==    by 0x471B662E: ???
+==27656==    by 0x4DF1D667: ???
+==27656== 
+==27656== 134 (32 direct, 102 indirect) bytes in 1 blocks are definitely lost in loss record 2,307 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C673EF: wasm_driver_output (hb_beamr.c:116)
+==27656==    by 0x502722: call_driver_output (io.c:1509)
+==27656==    by 0x509678: erts_port_output (io.c:2052)
+==27656==    by 0x50B085: erts_port_command (io.c:3994)
+==27656==    by 0x4F8E12: do_send (bif.c:2320)
+==27656==    by 0x4FC65E: erl_send (bif.c:2586)
+==27656==    by 0x4FC922: send_2 (bif.c:2532)
+==27656==    by 0x471B662E: ???
+==27656==    by 0x4E479247: ???
+==27656== 
+==27656== 134 (32 direct, 102 indirect) bytes in 1 blocks are definitely lost in loss record 2,308 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C673EF: wasm_driver_output (hb_beamr.c:116)
+==27656==    by 0x502722: call_driver_output (io.c:1509)
+==27656==    by 0x509678: erts_port_output (io.c:2052)
+==27656==    by 0x50B085: erts_port_command (io.c:3994)
+==27656==    by 0x4F8E12: do_send (bif.c:2320)
+==27656==    by 0x4FC65E: erl_send (bif.c:2586)
+==27656==    by 0x4FC922: send_2 (bif.c:2532)
+==27656==    by 0x471B662E: ???
+==27656==    by 0x4D0A4F77: ???
+==27656== 
+==27656== 320 bytes in 8 blocks are definitely lost in loss record 2,577 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FEF9: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C6C151: wasm_byte_vec_new (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C68816: wasm_initialize_runtime (hb_wasm.c:134)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 320 bytes in 8 blocks are definitely lost in loss record 2,578 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FEF9: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C738D6: wasm_module_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C689F8: wasm_initialize_runtime (hb_wasm.c:158)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 320 bytes in 8 blocks are definitely lost in loss record 2,579 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FEF9: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C772B9: wasm_instance_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C68F96: wasm_initialize_runtime (hb_wasm.c:237)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 320 bytes in 8 blocks are definitely lost in loss record 2,580 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FEF9: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C738D6: wasm_module_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C68FB0: wasm_initialize_runtime (hb_wasm.c:240)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 320 bytes in 8 blocks are definitely lost in loss record 2,581 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FEF9: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C772B9: wasm_instance_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C6B497: get_exported_function (hb_helpers.c:173)
+==27656==    by 0x55C69540: wasm_execute_function (hb_wasm.c:307)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 320 bytes in 8 blocks are definitely lost in loss record 2,582 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FEF9: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C738D6: wasm_module_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C6B4B4: get_exported_function (hb_helpers.c:175)
+==27656==    by 0x55C69540: wasm_execute_function (hb_wasm.c:307)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 320 bytes in 8 blocks are definitely lost in loss record 2,583 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FEF9: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C6C286: wasm_val_vec_new_uninitialized (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C695F7: wasm_execute_function (hb_wasm.c:320)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 776 bytes in 8 blocks are definitely lost in loss record 2,784 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FE76: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C6C151: wasm_byte_vec_new (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C68816: wasm_initialize_runtime (hb_wasm.c:134)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 1,616 (192 direct, 1,424 indirect) bytes in 8 blocks are definitely lost in loss record 2,997 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C6DC87: wasm_functype_copy (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C695BA: wasm_execute_function (hb_wasm.c:315)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 2,468 (64 direct, 2,404 indirect) bytes in 8 blocks are definitely lost in loss record 3,130 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FE76: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C738D6: wasm_module_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C68FB0: wasm_initialize_runtime (hb_wasm.c:240)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 2,480 (64 direct, 2,416 indirect) bytes in 8 blocks are definitely lost in loss record 3,132 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FE76: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C738D6: wasm_module_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C689F8: wasm_initialize_runtime (hb_wasm.c:158)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 2,480 (64 direct, 2,416 indirect) bytes in 8 blocks are definitely lost in loss record 3,133 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FE76: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C738D6: wasm_module_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C6B4B4: get_exported_function (hb_helpers.c:175)
+==27656==    by 0x55C69540: wasm_execute_function (hb_wasm.c:307)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 2,496 (64 direct, 2,432 indirect) bytes in 8 blocks are definitely lost in loss record 3,134 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FE76: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C772B9: wasm_instance_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C68F96: wasm_initialize_runtime (hb_wasm.c:237)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 2,576 (64 direct, 2,512 indirect) bytes in 8 blocks are definitely lost in loss record 3,142 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x55C8FE76: bh_vector_init (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C772B9: wasm_instance_exports (in /app/priv/hb_beamr.so)
+==27656==    by 0x55C6B497: get_exported_function (hb_helpers.c:173)
+==27656==    by 0x55C69540: wasm_execute_function (hb_wasm.c:307)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== 3,404 (1,344 direct, 2,060 indirect) bytes in 8 blocks are definitely lost in loss record 3,221 of 3,570
+==27656==    at 0x484077B: malloc (vg_replace_malloc.c:446)
+==27656==    by 0x5CCC11: erts_sys_alloc (sys.c:997)
+==27656==    by 0x508161: erts_alloc_fnf (erl_alloc.h:288)
+==27656==    by 0x508161: driver_alloc (io.c:6590)
+==27656==    by 0x55C68A21: wasm_initialize_runtime (hb_wasm.c:162)
+==27656==    by 0x56FF0C: async_main (erl_async.c:432)
+==27656==    by 0x6EB392: thr_wrapper (ethread.c:116)
+==27656==    by 0x4C571C3: start_thread (pthread_create.c:442)
+==27656==    by 0x4CD6ABF: clone (clone.S:100)
+==27656== 
+==27656== LEAK SUMMARY:
+==27656==    definitely lost: 5,256 bytes in 136 blocks
+==27656==    indirectly lost: 16,480 bytes in 558 blocks
+==27656==      possibly lost: 617,028 bytes in 1,740 blocks
+==27656==    still reachable: 56,666,442 bytes in 56,069 blocks
+==27656==         suppressed: 148,778 bytes in 28 blocks
+==27656== Reachable blocks (those to which a pointer was found) are not shown.
+==27656== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==27656== 
+==27656== For lists of detected and suppressed errors, rerun with: -s
+==27656== ERROR SUMMARY: 111 errors from 111 contexts (suppressed: 3 from 3)

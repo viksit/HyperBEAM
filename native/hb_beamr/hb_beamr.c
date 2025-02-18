@@ -139,6 +139,8 @@ static void wasm_driver_output(ErlDrvData raw, char *buff, ErlDrvSizeT bufflen) 
     if (strcmp(command, "init") == 0) {
         // Start async initialization
         proc->pid = driver_caller(proc->port);
+        proc->current_args = NULL;
+        proc->current_function = NULL;
         //DRV_DEBUG("Caller PID: %d", proc->pid);
         int size, type, mode_size;
         char* mode;

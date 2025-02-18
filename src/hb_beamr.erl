@@ -54,6 +54,7 @@
 -export([start/1, start/2, call/3, call/4, call/5, call/6, stop/1, wasm_send/2]).
 %%% Utility API:
 -export([serialize/1, deserialize/2, stub/3]).
+-export([benchmark2_test/1]).
 
 -include("src/include/hb.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -329,3 +330,17 @@ benchmark_test() ->
         [hb_util:human_int(Iterations), BenchTime, Iterations / BenchTime]
     ),
     hb_beamr:stop(WASM).
+
+benchmark2_test(Num) ->
+    {ok, File} = file:read_file("test/test-64.wasm"),
+    lists:foreach(
+        fun(_) ->  
+            {ok, WASM, _ImportMap, _Exports} = start(File),
+            % {ok, [Result]} = call(WASM, "fac", [1.0]),
+            hb_beamr:stop(WASM)
+        end,
+        lists:seq(1, Num)
+    ),
+    timer:sleep(1000).
+    
+    
