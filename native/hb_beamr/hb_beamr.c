@@ -30,14 +30,24 @@ static ErlDrvData wasm_driver_start(ErlDrvPort port, char *buff) {
     DRV_DEBUG("info.dirty_scheduler_support: %d", info.dirty_scheduler_support);
     DRV_DEBUG("info.erts_version: %s", info.erts_version);
     DRV_DEBUG("info.otp_release: %s", info.otp_release);
+    // It's important to initialize structure with NULL values
+    // for missing pointed data, as otherwise we get random data
+    // there instead
     Proc* proc = driver_alloc(sizeof(Proc));
     proc->port = port;
+    proc->current_args = NULL;
+    proc->current_function = NULL;
     DRV_DEBUG("Port: %p", proc->port);
     proc->port_term = driver_mk_port(proc->port);
     DRV_DEBUG("Port term: %p", proc->port_term);
     proc->is_running = erl_drv_mutex_create("wasm_instance_mutex");
     proc->is_initialized = 0;
     proc->start_time = time(NULL);
+    proc->engine = NULL;
+    proc->instance = NULL;
+    proc->module = NULL;
+    proc->indirect_func_table = NULL;
+    proc->mod_bin = NULL;
     return (ErlDrvData)proc;
 }
 
@@ -70,6 +80,11 @@ static void wasm_driver_stop(ErlDrvData raw) {
         DRV_DEBUG("Deleted WASM module");
         wasm_store_delete(proc->store);
         DRV_DEBUG("Deleted WASM store");
+        // Could not remove engine without warnings here
+        // if(proc->engine){
+        //     wasm_engine_delete(proc->engine);
+        //     DRV_DEBUG("Deleted the ENGINE");
+        // }
     }
 
     for (size_t i = 0; i < proc->mod_bin->stubs_size; i++) {
@@ -98,13 +113,13 @@ static void wasm_driver_stop(ErlDrvData raw) {
     driver_free(proc->mod_bin);
 
     // Cleanup memory allocatef for current args
-    if(proc->current_args != NULL){
+    if(proc->current_args){
         driver_free(proc->current_args);
         proc->current_args = NULL;
     }
 
     // Clenup memory allocated for storing current function
-    if(proc->current_function != NULL){
+    if(proc->current_function){
         driver_free(proc->current_function);
         proc->current_function = NULL;
     }
@@ -139,8 +154,6 @@ static void wasm_driver_output(ErlDrvData raw, char *buff, ErlDrvSizeT bufflen) 
     if (strcmp(command, "init") == 0) {
         // Start async initialization
         proc->pid = driver_caller(proc->port);
-        proc->current_args = NULL;
-        proc->current_function = NULL;
         //DRV_DEBUG("Caller PID: %d", proc->pid);
         int size, type, mode_size;
         char* mode;

@@ -54,8 +54,7 @@
 -export([start/1, start/2, call/3, call/4, call/5, call/6, stop/1, wasm_send/2]).
 %%% Utility API:
 -export([serialize/1, deserialize/2, stub/3]).
--export([benchmark2_test/1]).
-
+-export([benchmark_memory_leak/1]).
 -include("src/include/hb.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
@@ -331,16 +330,42 @@ benchmark_test() ->
     ),
     hb_beamr:stop(WASM).
 
-benchmark2_test(Num) ->
+% Previousely node was segfaulting when trying to clean up
+% not initialized driver data
+start_stop_test() ->
     {ok, File} = file:read_file("test/test-64.wasm"),
+    {ok, WASM, _ImportMap, _Exports} = start(File),
+    hb_beamr:stop(WASM).
+
+used_memory() ->
+    erlang:memory(system) - erlang:memory(atom) - erlang:memory(binary) - erlang:memory(ets).
+
+% shows system memory increase after the given number of call iterations
+% benchmark_memory_leak(1000000).
+benchmark_memory_leak(N) ->
+    {ok, File} = file:read_file("test/test-64.wasm"),
+    {ok, WASM, _ImportMap, _Exports} = hb_beamr:start(File),
+    TestSeq = lists:seq(1, N),
+    Base = used_memory(),
     lists:foreach(
-        fun(_) ->  
-            {ok, WASM, _ImportMap, _Exports} = start(File),
-            % {ok, [Result]} = call(WASM, "fac", [1.0]),
-            hb_beamr:stop(WASM)
+        fun(X) ->
+            hb_beamr:call(WASM, "fac", [2.0]),
+            % Now = used_memory(),
+            case X rem 50000 of
+                0 ->
+                    hb_util:eunit_print(
+                        "Iteration: ~p, Mem delta: ~p (Kb)\n",
+                        [X, (used_memory() - Base)/1000]
+                    );
+                _ -> 
+                    ignore
+            end,
+            ok
         end,
-        lists:seq(1, Num)
+        TestSeq
     ),
-    timer:sleep(1000).
-    
-    
+    hb_beamr:stop(WASM),
+    hb_util:eunit_print(
+        "Final mem delta: ~p (Kb)\n",
+        [(used_memory() - Base)/1000]
+    ).
