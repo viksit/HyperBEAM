@@ -19,32 +19,34 @@ compute(Msg1, Msg2, Opts) ->
     PatchFrom = hb_converge:get_first(
         [
             {Msg2, <<"patch-from">>},
+            {Msg2, <<"body/patch-from">>},
             {Msg1, <<"patch-from">>}
         ],
-        <<"/results/outbox">>,
+        <<"/results/patches">>,
         Opts
     ),
     PatchTo = hb_converge:get_first(
         [
             {Msg2, <<"patch-to">>},
+            {Msg2, <<"body/patch-to">>},
             {Msg1, <<"patch-to">>}
         ],
         <<"/">>,
         Opts
     ),
-    ?event({patch_from, PatchFrom}),
+    ?event({patch_from, PatchFrom, {req, Msg2}}),
     ?event({patch_to, PatchTo}),
     % Get the outbox from the message.
-    Outbox = hb_converge:get(PatchFrom, Msg1, #{}, Opts),
+    Source = hb_converge:get(PatchFrom, Msg1, #{}, Opts),
     % Find all messages with the PATCH request.
     Patches =
         maps:filter(
             fun(_, Msg) ->
                 hb_converge:get(<<"method">>, Msg, Opts) == <<"PATCH">>
             end,
-            Outbox
+            Source
         ),
-    OutboxWithoutPatches = maps:without(maps:keys(Patches), Outbox),
+    SourceWithoutPatches = maps:without(maps:keys(Patches), Source),
     % Find the state to apply the patches to.
     % Apply the patches to the state.
     PatchedSubmessage =
@@ -75,8 +77,8 @@ compute(Msg1, Msg2, Opts) ->
         ok,
         hb_converge:set(
             PatchedState,
-            <<"/results/outbox">>,
-            OutboxWithoutPatches,
+            PatchFrom,
+            SourceWithoutPatches,
             Opts
         )
     },
@@ -89,7 +91,7 @@ uninitialized_patch_test() ->
     InitState = #{
         <<"device">> => <<"patch@1.0">>,
         <<"results">> => #{
-            <<"outbox">> => #{
+            <<"patches">> => #{
                 <<"1">> => #{
                     <<"method">> => <<"PATCH">>,
                     <<"prices">> => #{
@@ -106,8 +108,7 @@ uninitialized_patch_test() ->
             }
         },
         <<"other-message">> => <<"other-value">>,
-        <<"patch-to">> => <<"/">>,
-        <<"patch-from">> => <<"/results/outbox">>
+        <<"patch-to">> => <<"/">>
     },
     {ok, ResolvedState} =
         hb_converge:resolve(
