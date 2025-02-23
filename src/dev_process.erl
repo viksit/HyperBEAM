@@ -834,6 +834,7 @@ aos_state_patch_test_() ->
             <<"target">> => ProcID,
             <<"type">> => <<"Message">>,
             <<"action">> => <<"Eval">>,
+            <<"patch-from">> => <<"/results/outbox">>,
             <<"data">> => <<"table.insert(ao.outbox.Messages, { method = \"PATCH\", x = \"banana\" })">>
         }, Wallet))#{ <<"path">> => <<"schedule">>, <<"method">> => <<"POST">> },
         {ok, _} = hb_converge:resolve(Msg1, Msg2, #{}),
