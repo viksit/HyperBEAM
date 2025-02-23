@@ -51,14 +51,12 @@
 -export([ensure_process_key/2]).
 %%% Test helpers
 -export([test_aos_process/0, dev_test_process/0, test_wasm_process/1]).
-%%% Tests
--export([do_test_restore/0]).
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("include/hb.hrl").
 
 %% The frequency at which the process state should be cached. Can be overridden
 %% with the `cache_frequency' option.
--define(DEFAULT_CACHE_FREQ, 1).
+-define(DEFAULT_CACHE_FREQ, 3).
 
 %% @doc When the info key is called, we should return the process exports.
 info(_Msg1) ->
@@ -847,37 +845,37 @@ aos_state_patch_test_() ->
     end}.
 
 %% @doc Manually test state restoration without using the cache.
-restore_test_() -> {timeout, 30, fun do_test_restore/0}.
-
-do_test_restore() ->
-    % Init the process and schedule 3 messages:
-    % 1. Set variables in Lua.
-    % 2. Return the variable.
-    % Execute the first computation, then the second as a disconnected process.
-    Opts = #{ process_cache_frequency => 1 },
-    init(),
-    Store = hb_opts:get(store, no_viable_store, Opts),
-    ResetRes = hb_store:reset(Store),
-    ?event({reset_store, {result, ResetRes}, {store, Store}}),
-    Msg1 = test_aos_process(),
-    schedule_aos_call(Msg1, <<"X = 42">>),
-    schedule_aos_call(Msg1, <<"X = 1337">>),
-    schedule_aos_call(Msg1, <<"return X">>),
-    % Compute the first message.
-    {ok, _} =
-        hb_converge:resolve(
-            Msg1,
-            #{ <<"path">> => <<"compute">>, <<"slot">> => 1 },
-            Opts
-        ),
-    {ok, ResultB} =
-        hb_converge:resolve(
-            Msg1,
-            #{ <<"path">> => <<"compute">>, <<"slot">> => 2 },
-            Opts
-        ),
-    ?event({result_b, ResultB}),
-    ?assertEqual(<<"1337">>, hb_converge:get(<<"results/data">>, ResultB, #{})).
+restore_test_() ->
+    {timeout, 30, fun() ->
+        % Init the process and schedule 3 messages:
+        % 1. Set variables in Lua.
+        % 2. Return the variable.
+        % Execute the first computation, then the second as a disconnected process.
+        Opts = #{ process_cache_frequency => 1 },
+        init(),
+        Store = hb_opts:get(store, no_viable_store, Opts),
+        ResetRes = hb_store:reset(Store),
+        ?event({reset_store, {result, ResetRes}, {store, Store}}),
+        Msg1 = test_aos_process(),
+        schedule_aos_call(Msg1, <<"X = 42">>),
+        schedule_aos_call(Msg1, <<"X = 1337">>),
+        schedule_aos_call(Msg1, <<"return X">>),
+        % Compute the first message.
+        {ok, _} =
+            hb_converge:resolve(
+                Msg1,
+                #{ <<"path">> => <<"compute">>, <<"slot">> => 1 },
+                Opts
+            ),
+        {ok, ResultB} =
+            hb_converge:resolve(
+                Msg1,
+                #{ <<"path">> => <<"compute">>, <<"slot">> => 2 },
+                Opts
+            ),
+        ?event({result_b, ResultB}),
+        ?assertEqual(<<"1337">>, hb_converge:get(<<"results/data">>, ResultB, #{}))
+    end}.
 
 now_results_test_() ->
     {timeout, 30, fun() ->
