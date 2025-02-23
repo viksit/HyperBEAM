@@ -19,7 +19,6 @@ compute(Msg1, Msg2, Opts) ->
     Slot = hb_converge:get(<<"slot">>, Msg2, Opts),
     ?event(push, {compute_lite_called, {process_id, ProcessID}, {slot, Slot}}),
     OutputPrefix = dev_stack:prefix(Msg1, Msg2, Opts),
-    Accept = hb_converge:get(<<"accept">>, Msg2, <<"application/http">>, Opts),
     ProcessID =
         hb_converge:get_first(
             [
@@ -29,7 +28,7 @@ compute(Msg1, Msg2, Opts) ->
             Opts
         ),
     {ok, JSONRes} = do_compute(ProcessID, Slot, Opts),
-    ?event(push, {compute_lite_res, {process_id, ProcessID}, {slot, Slot}, {json_res, JSONRes}}),
+    ?event(push, {compute_lite_res, {process_id, ProcessID}, {slot, Slot}, {json_res, {explicit, JSONRes}}}, Opts),
     {ok, Msg} = dev_json_iface:json_to_message(JSONRes, Opts),
     {ok,
         hb_converge:set(

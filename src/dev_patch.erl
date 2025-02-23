@@ -34,10 +34,12 @@ compute(Msg1, Msg2, Opts) ->
         <<"/">>,
         Opts
     ),
-    ?event({patch_from, PatchFrom, {req, Msg2}}),
+    ?event({patch_from, PatchFrom}),
     ?event({patch_to, PatchTo}),
     % Get the outbox from the message.
     Source = hb_converge:get(PatchFrom, Msg1, #{}, Opts),
+    ?event({state, Msg1}),
+    ?event({source_patches, Source}),
     % Find all messages with the PATCH request.
     Patches =
         maps:filter(
