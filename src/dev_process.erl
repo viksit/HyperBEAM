@@ -80,32 +80,6 @@ slot(Msg1, Msg2, Opts) ->
 next(Msg1, _Msg2, Opts) ->
     run_as(<<"scheduler">>, Msg1, next, Opts).
 
-snapshot(RawMsg1, _Msg2, Opts) ->
-    Msg1 = ensure_process_key(RawMsg1, Opts),
-    {ok, SnapshotMsg} = run_as(
-        <<"Execution">>,
-        Msg1,
-        #{ <<"path">> => <<"snapshot">>, <<"mode">> => <<"Map">> },
-        Opts#{ cache_control => [] }
-    ),
-    ProcID = hb_message:id(Msg1, all),
-    Slot = hb_converge:get(<<"current-slot">>, Msg1, Opts),
-    {ok,
-        hb_private:set(
-            hb_converge:set(
-                SnapshotMsg,
-                #{ <<"cache-control">> => [<<"store">>] },
-                Opts
-            ),
-            #{ <<"priv/additional-hashpaths">> =>
-                    [
-                        hb_path:to_binary([ProcID, <<"snapshot">>, Slot])
-                    ]
-            },
-            Opts
-        )
-    }.
-
 %% @doc Before computation begins, a boot phase is required. This phase
 %% allows devices on the execution stack to initialize themselves. We set the
 %% `Initialized' key to `True' to indicate that the process has been
@@ -241,6 +215,34 @@ store_result(ProcID, Slot, Msg3, Msg2, Opts) ->
                 Msg3
         end,
     dev_process_cache:write(ProcID, Slot, Msg3MaybeWithSnapshot, Opts).
+
+%% @doc Take a snapshot of any devices that hold state in memory during 
+%% the execution of a process.
+snapshot(RawMsg1, _Msg2, Opts) ->
+    Msg1 = ensure_process_key(RawMsg1, Opts),
+    {ok, SnapshotMsg} = run_as(
+        <<"Execution">>,
+        Msg1,
+        #{ <<"path">> => <<"snapshot">>, <<"mode">> => <<"Map">> },
+        Opts#{ cache_control => [] }
+    ),
+    ProcID = hb_message:id(Msg1, all),
+    Slot = hb_converge:get(<<"current-slot">>, Msg1, Opts),
+    {ok,
+        hb_private:set(
+            hb_converge:set(
+                SnapshotMsg,
+                #{ <<"cache-control">> => [<<"store">>] },
+                Opts
+            ),
+            #{ <<"priv/additional-hashpaths">> =>
+                    [
+                        hb_path:to_binary([ProcID, <<"snapshot">>, Slot])
+                    ]
+            },
+            Opts
+        )
+    }.
 
 %% @doc Returns the `/Results' key of the latest computed message.
 now(RawMsg1, _Msg2, Opts) ->
