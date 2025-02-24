@@ -75,7 +75,7 @@ default_message() ->
                 <<"ans104@1.0">> => dev_codec_ans104,
                 <<"flat@1.0">> => dev_codec_flat,
                 <<"structured@1.0">> => dev_codec_structured,
-                <<"lookup@1.0">> => dev_lookup,
+                <<"cache@1.0">> => dev_cache,
                 <<"genesis-wasm@1.0">> => dev_genesis_wasm,
                 <<"delegated-compute@1.0">> => dev_delegated_compute,
                 <<"patch@1.0">> => dev_patch,

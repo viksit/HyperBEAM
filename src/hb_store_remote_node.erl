@@ -4,7 +4,7 @@
 %%% been written to the remote node. In that case, the node would probably want
 %%% to upload it to an Arweave bundler to ensure persistence, too.
 -module(hb_store_remote_node).
--export([scope/1, type/2, read/2, resolve/2]).
+-export([scope/1, type/2, read/2, resolve/2, write/3, link/3]).
 -include("include/hb.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
@@ -30,6 +30,48 @@ read(Opts = #{ <<"node">> := Node }, Key) ->
         {error, Err} ->
             ?event({read_error, Key, Err}),
             not_found
+    end.
+
+write(Opts = #{ <<"node">> := Node }, DataLocation, Msg) ->
+    WriteReq =
+        hb_message:attest(
+            #{
+                <<"body">> => Msg,
+                <<"location">> => DataLocation
+            },
+            Opts
+        ),
+    ?event({writing, {node, Node}, {location, DataLocation}, {msg, Msg}}),
+    case hb_http:post(Node, <<"/~cache@1.0/write">>, WriteReq, Opts) of
+        {ok, Res} ->
+            {ok, Res};
+        {error, Err} ->
+            ?event(
+                {write_error,
+                    {node, Node},
+                    {location, DataLocation},
+                    {msg, Msg},
+                    {error, Err}
+                }
+            ),
+            {error, Err}
+    end.
+
+link(Opts = #{ <<"node">> := Node }, Source, Destination) ->
+    ?event({linking, {node, Node}, {source, Source}, {destination, Destination}}),
+    Req = hb_message:attest(
+        #{
+            <<"operation">> => <<"link">>,
+            <<"source">> => Source,
+            <<"destination">> => Destination
+        },
+        Opts
+    ),
+    case hb_http:post(Node, <<"/~cache@1.0/write">>, Req, Opts) of
+        {ok, Res} ->
+            {ok, Res};
+        {error, Err} ->
+            {error, Err}
     end.
 
 %%% Tests
