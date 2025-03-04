@@ -101,13 +101,12 @@ init() ->
     Old = erlang:system_flag(backtrace_depth, hb_opts:get(debug_stack_depth)),
     ?event({old_system_stack_depth, Old}),
     ok.
-
 %% @doc Start a mainnet server without payments.
 start_mainnet() ->
     start_mainnet(hb_opts:get(port)).
-start_mainnet(Port) ->
+start_mainnet(Port) when is_integer(Port) ->
     start_mainnet(#{ port => Port });
-start_mainnet(Opts) ->
+start_mainnet(Opts) when is_map(Opts) ->
     application:ensure_all_started([
         kernel,
         stdlib,
@@ -123,6 +122,7 @@ start_mainnet(Opts) ->
     ]),
     Wallet = hb:wallet(hb_opts:get(priv_key_location)),
     BaseOpts = hb_http_server:set_default_opts(Opts),
+	?event(hb, {explicit, BaseOpts}),
     hb_http_server:start_node(
         FinalOpts =
             BaseOpts#{

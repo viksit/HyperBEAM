@@ -1,0 +1,118 @@
+site_name: 'HyperBEAM Documentation'
+repo_url: https://github.com/permaweb/HyperBEAM
+repo_name: 'permaweb/HyperBEAM'
+site_url: https://permaweb.github.io/
+
+nav:
+  - Home: 'index.md'
+  - Getting Started:
+    - Overview: 'getting-started/index.md'
+    - System Requirements: 'getting-started/requirements.md'
+    - Installation:
+      - Overview: 'getting-started/installation/index.md'
+      - System Dependencies: 'getting-started/installation/dependencies.md'
+      - Erlang: 'getting-started/installation/erlang.md'
+      - Rebar3: 'getting-started/installation/rebar3.md'
+      - Node.js: 'getting-started/installation/nodejs.md'
+      - Rust: 'getting-started/installation/rust.md'
+  - Core Components:
+    - HyperBEAM:
+      - Overview: 'hyperbeam/index.md'
+      - Setup: 'hyperbeam/setup.md'
+      - Configuration: 'hyperbeam/configuration.md'
+      - Testing: 'hyperbeam/testing.md'
+      - API Reference: 'hyperbeam/api.md'
+    - Compute Unit:
+      - Overview: 'compute-unit/index.md'
+      - Setup: 'compute-unit/setup.md'
+      - Configuration: 'compute-unit/configuration.md'
+      - API Reference: 'compute-unit/api.md'
+  - Guides:
+    - Overview: 'guides/index.md'
+    - Integration: 'guides/integration.md'
+  - Reference:
+    - Troubleshooting: 'reference/troubleshooting.md'
+    - Glossary: 'reference/glossary.md'
+    - FAQ: 'reference/faq.md'
+  - Contribute:
+    - Development Setup: 'contribute/setup.md'
+    - Contribution Guidelines: 'contribute/guidelines.md'
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.critic
+  - pymdownx.keys
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+theme: 
+  name: material
+  language: en
+  logo: assets/images/favicon.png
+  icon:
+    repo: fontawesome/brands/github 
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    # - navigation.sections
+    - navigation.path
+    - navigation.top
+    # - navigation.expand
+    - navigation.indexes
+    - toc.follow
+    - content.tooltips
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+    - navigation.footer
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: green
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: green
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+  nav_style: dark
+  highlightjs: true
+
+plugins:
+  - search
+
+extra_css:
+  - assets/style.css
+ 
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/permaweb/HyperBEAM
+      name: GitHub
