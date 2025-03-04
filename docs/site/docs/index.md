@@ -23,12 +23,25 @@ Welcome to the official documentation for HyperBEAM, a client implementation of 
 
 ## What is HyperBEAM?
 
-HyperBEAM is a distributed system that allows operators to offer computational resources to users in the AO network. It abstracts hardware provisioning details from the execution of individual programs, enabling a decentralized computing platform where:
+HyperBEAM is a client implementation of the AO-Core protocol, written in Erlang. It serves as the 'node' software for the decentralized operating system that AO enables, abstracting hardware provisioning details from the execution of individual programs.
+
+HyperBEAM node operators can offer computational resources to users in the AO network by electing to execute any number of different devices, potentially charging users for their computation as necessary. It enables a decentralized computing platform where:
 
 - Programs run as independent processes
 - Processes communicate via asynchronous message passing
 - Computation occurs across a distributed network of nodes
 - State is persisted and accessible across the network
+
+### What is AO-Core?
+
+AO-Core is a protocol built to enable decentralized computations, offering a series of universal primitives. Instead of enforcing a single, monolithic architecture, AO-Core provides a framework into which any number of different computational models, encapsulated as primitive devices, can be attached.
+
+AO-Core's protocol is built upon these fundamental primitives:
+
+- **Hashpaths**: A mechanism for referencing locations in a program's state-space prior to execution
+- **Unified data structure**: For representing program states as HTTP documents
+- **Attestation protocol**: For expressing attestations of states found at particular hashpaths
+- **Meta-VM**: Allowing various virtual machines and computational models (devices) to be executed inside the AO-Core protocol
 
 ## System Architecture
 
@@ -39,6 +52,24 @@ The HyperBEAM ecosystem consists of two main components:
 2. **Compute Unit (CU)**: A NodeJS implementation that executes WebAssembly modules and handles computational tasks.
 
 Together, these components form a complete execution environment for AO processes.
+
+### Messages
+
+HyperBEAM describes every piece of data as a message, which can be interpreted as a binary term or as a collection of named functions (a Map of functions). Every message may specify a device which is interpreted by the AO-Core compatible system to operate upon the message's contents.
+
+Executing a named function within a message, providing a map of arguments, results in another message. In this way, messages in AO-Core always beget further messages, giving rise to a vast computational space leveraging function application and composition at its core.
+
+### Devices
+
+HyperBEAM supports numerous devices, each enabling different services to be offered by the node. Each HyperBEAM node comes with preloaded devices, including:
+
+- **~meta@1.0**: Used to configure the node's hardware, supported devices, and other settings
+- **~relay@1.0**: Used to relay messages between nodes and the wider HTTP network
+- **~wasm64@1.0**: Used to execute WebAssembly code
+- **~process@1.0**: Enables creation of persistent, shared executions accessible by multiple users
+- **~snp@1.0**: Used for trusted execution environment (TEE) operations
+
+Node operators can add or remove devices as necessary based on their requirements.
 
 ## Key Features
 
@@ -58,6 +89,15 @@ To get started with HyperBEAM:
 4. [Configure the Compute Unit](compute-unit/setup.md)
 5. [Verify your installation](guides/integration.md)
 
+### Basic Installation Requirements
+
+You will need:
+
+- The Erlang runtime (OTP 27)
+- Rebar3
+- Rust / Cargo
+- Git
+
 ## Documentation Structure
 
 This documentation is organized into the following sections:
@@ -70,7 +110,8 @@ This documentation is organized into the following sections:
 
 ## Community and Support
 
-- **GitHub**: [permaweb/HyperBEAM](https://github.com/permaweb/HyperBEAM)
+- **GitHub HyperBEAM**: [permaweb/HyperBEAM](https://github.com/permaweb/HyperBEAM)
+- **Github Local CU**: [permaweb/local-cu](https://github.com/permaweb/local-cu)
 - **Discord**: [Join the community](https://discord.gg/V3yjzrBxPM)
 - **Issues**: [File a bug report](https://github.com/permaweb/HyperBEAM/issues)
 

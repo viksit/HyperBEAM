@@ -19,17 +19,24 @@ nav:
     - HyperBEAM:
       - Overview: 'hyperbeam/index.md'
       - Setup: 'hyperbeam/setup.md'
-      - Configuration: 'hyperbeam/configuration.md'
+      - Configuration:
+        - Overview: 'hyperbeam/configuration/index.md'
+        - Configuration Methods: 'hyperbeam/configuration/configuration-methods.md'
+        - Configuration Options: 'hyperbeam/configuration/configuration-options.md'
+        - Storage Configuration: 'hyperbeam/configuration/storage-configuration.md'
+        - Routing Configuration: 'hyperbeam/configuration/routing-configuration.md'
+        - Configuration Examples: 'hyperbeam/configuration/configuration-examples.md' 
       - Testing: 'hyperbeam/testing.md'
-      - API Reference: 'hyperbeam/api.md'
+      # - API Reference: 'hyperbeam/api.md'
     - Compute Unit:
       - Overview: 'compute-unit/index.md'
       - Setup: 'compute-unit/setup.md'
       - Configuration: 'compute-unit/configuration.md'
-      - API Reference: 'compute-unit/api.md'
+    - TEE:
+      - Overview: 'tee/index.md'
   - Guides:
     - Overview: 'guides/index.md'
-    - Integration: 'guides/integration.md'
+    # - Integration: 'guides/integration.md'
   - Reference:
     - Troubleshooting: 'reference/troubleshooting.md'
     - Glossary: 'reference/glossary.md'

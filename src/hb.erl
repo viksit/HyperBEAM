@@ -120,13 +120,13 @@ start_mainnet(Opts) when is_map(Opts) ->
         os_mon,
         rocksdb
     ]),
-    Wallet = hb:wallet(hb_opts:get(priv_key_location)),
+	
+    Wallet = hb:wallet(hb_opts:get(priv_key_location, hb_opts:get(priv_key_location), Opts)),
     BaseOpts = hb_http_server:set_default_opts(Opts),
 	?event(hb, {explicit, BaseOpts}),
-    hb_http_server:start_node(
+	hb_http_server:start_node(
         FinalOpts =
             BaseOpts#{
-                store => {hb_store_fs, #{ prefix => "mainnet-cache" }},
                 priv_wallet => Wallet
             }
     ),
@@ -138,9 +138,9 @@ start_mainnet(Opts) when is_map(Opts) ->
     io:format(
         "Started mainnet node at http://localhost:~p~n"
         "Operator: ~s~n",
-        [maps:get(port, Opts), Address]
+        [ maps:get(port, BaseOpts), Address]
     ),
-    <<"http://localhost:", (integer_to_binary(maps:get(port, Opts)))/binary>>.
+    <<"http://localhost:", (integer_to_binary(maps:get(port, BaseOpts)))/binary>>.
 
 %%% @doc Start a server with a `simple-pay@1.0` pre-processor.
 start_simple_pay() ->

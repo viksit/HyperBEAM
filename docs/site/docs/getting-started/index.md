@@ -7,10 +7,9 @@ This section will guide you through the process of preparing your machine with t
 Setting up HyperBEAM involves several steps:
 
 1. **Check System Requirements** - Ensure your hardware and operating system meet the minimum requirements
-2. **Install Dependencies** - Set up the necessary system packages and programming languages
-3. **Install HyperBEAM** - Clone and compile the HyperBEAM source code
-4. **Set Up the Compute Unit** - Install and configure the Compute Unit for WASM execution
-5. **Configuration** - Configure both components to work together
+2. **Install Dependencies** - Set up the necessary system packages and dependencies
+3. **Setup HyperBEAM** - Clone, Compile, Configure, and Run the HyperBEAM
+4. **SetUp the Compute Unit** - Clone, Compile, Configure, and Run the Local Compute Unit
 
 ## Before You Begin
 

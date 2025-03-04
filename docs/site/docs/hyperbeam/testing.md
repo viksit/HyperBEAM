@@ -35,51 +35,19 @@ For example, to run the `config_test` in the `dev_meta` module:
 rebar3 eunit --test dev_meta:config_test
 ```
 
-## Integration Tests
-
-To ensure that HyperBEAM works correctly with the Compute Unit (CU), you can run integration tests.
-
-### Prerequisites for Integration Tests
-
-Before running integration tests, make sure:
-
-1. Both HyperBEAM and the Compute Unit are running
-2. They are configured to point to each other
-
-## Manual Testing
-
-You can also manually test HyperBEAM to verify its functionality.
-
-### Testing the HTTP API
-
-You can use curl to test the HTTP API:
-
-```bash
-curl http://localhost:10000/~meta@1.0/info
-```
-
-This should return information about your HyperBEAM node.
-
-### Testing with AOS CLI
-
-The AOS CLI provides a convenient way to test your HyperBEAM setup:
-
-```bash
-# Install the AOS CLI if not already installed
-npm i -g https://arweave.net/XCeKQlNLulA6IZCHZQsZcr3wWomXLJrvowJH05fV_m4
-
-# Test the HyperBEAM connection
-aos hb_test --mainnet http://localhost:10000
-```
-
 ## Troubleshooting Failed Tests
 
 If tests fail, check the following:
 
 1. Ensure all dependencies are installed correctly
 2. Verify that HyperBEAM is properly configured
-3. Check that the Compute Unit is running and accessible
-4. Look for error messages in the test output
-5. Examine the HyperBEAM logs for more details
+3. Look for error messages in the test output
+4. Examine the HyperBEAM logs for more details
+
+### Common Issues
+
+- **Connection refused**: Ensure HyperBEAM is running on the expected port
+- **Authentication errors**: Check your wallet configuration
+- **Device not found**: Verify the device is included in your HyperBEAM configuration
 
 For specific error messages, refer to the [Troubleshooting Guide](../reference/troubleshooting.md). 
