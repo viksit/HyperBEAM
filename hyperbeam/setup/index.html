@@ -725,15 +725,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#verification" class="md-nav__link">
-    <span class="md-ellipsis">
-      Verification
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       Next Steps
@@ -1448,15 +1439,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#verification" class="md-nav__link">
-    <span class="md-ellipsis">
-      Verification
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       Next Steps
@@ -1515,13 +1497,16 @@
 <p>This will start HyperBEAM using the default configuration inside the hb_opts.erl,
 which preloads all devices and sets up default stores. All of these can be configured using
 the config.flat file with any overrides you specify.</p>
+<p>To verify that your HyperBEAM node is running correctly, you can check:</p>
+<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>http://localhost:10000/~meta@1.0/info
+</span></code></pre></div>
+If you receive a response with node information, your HyperBEAM installation is working properly.</p>
 <h2 id="4-run-hyperbeam-with-mainnet"><strong>4. Run HyperBEAM with Mainnet</strong></h2>
 <p>To start HyperBEAM connected to the mainnet, you can use the <code>--eval</code> option with rebar3:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>rebar3<span class="w"> </span>shell<span class="w"> </span>--eval<span class="w"> </span><span class="s1">&#39;start_mainnet:start(#{}).&#39;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rebar3<span class="w"> </span>shell<span class="w"> </span>--eval<span class="w"> </span><span class="s2">&quot;hb:start_mainnet(#{ port =&gt; 10001, priv_key_location =&gt; &lt;&lt;\&quot;./wallet.json\&quot;&gt;&gt;}).&quot;</span>
 </span></code></pre></div>
-<h2 id="verification"><strong>Verification</strong></h2>
 <p>To verify that your HyperBEAM node is running correctly, you can check:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>http://localhost:10000/~meta@1.0/info
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>http://localhost:10001/~meta@1.0/info
 </span></code></pre></div>
 <p>If you receive a response with node information, your HyperBEAM installation is working properly.</p>
 <h2 id="next-steps"><strong>Next Steps</strong></h2>
