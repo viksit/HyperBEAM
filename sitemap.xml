@@ -11,11 +11,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://permaweb.github.io/compute-unit/api/</loc>
-         <lastmod>2025-03-04</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://permaweb.github.io/compute-unit/configuration/</loc>
          <lastmod>2025-03-04</lastmod>
          <changefreq>daily</changefreq>
@@ -111,6 +106,36 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://permaweb.github.io/hyperbeam/configuration/</loc>
+         <lastmod>2025-03-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://permaweb.github.io/hyperbeam/configuration/configuration-examples/</loc>
+         <lastmod>2025-03-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://permaweb.github.io/hyperbeam/configuration/configuration-methods/</loc>
+         <lastmod>2025-03-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://permaweb.github.io/hyperbeam/configuration/configuration-options/</loc>
+         <lastmod>2025-03-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://permaweb.github.io/hyperbeam/configuration/routing-configuration/</loc>
+         <lastmod>2025-03-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://permaweb.github.io/hyperbeam/configuration/storage-configuration/</loc>
+         <lastmod>2025-03-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://permaweb.github.io/reference/faq/</loc>
          <lastmod>2025-03-04</lastmod>
          <changefreq>daily</changefreq>
@@ -122,6 +147,11 @@
     </url>
     <url>
          <loc>https://permaweb.github.io/reference/troubleshooting/</loc>
+         <lastmod>2025-03-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://permaweb.github.io/tee/</loc>
          <lastmod>2025-03-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
