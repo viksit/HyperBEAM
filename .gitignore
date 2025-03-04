@@ -29,6 +29,8 @@ rebar3.crashdump
 native/hb_beamr/*.o
 native/hb_beamr/*.d
 
+docs/site/site
+
 priv/*
 .DS_STORE
 TEST-data*
