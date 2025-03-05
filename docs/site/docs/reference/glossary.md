@@ -23,7 +23,7 @@ A functional unit in HyperBEAM that provides specific capabilities to the system
 ### Erlang
 The programming language used to implement the HyperBEAM core, known for its robustness and support for building distributed, fault-tolerant applications.
 
-### flat@1.0
+### ~flat@1.0
 A format used for encoding settings files in HyperBEAM configuration, using HTTP header styling.
 
 ### Hashpaths
@@ -41,7 +41,7 @@ A unit of code that can be loaded and executed by the Compute Unit, typically in
 ### Node
 An instance of HyperBEAM running on a physical or virtual machine that participates in the distributed network.
 
-### p4@1.0
+### ~p4@1.0
 A device that runs as a pre-processor and post-processor in HyperBEAM, enabling a framework for node operators to sell usage of their machine's hardware to execute AO-Core devices.
 
 ### Process
@@ -50,7 +50,7 @@ An independent unit of computation in HyperBEAM with its own state and execution
 ### Process ID
 A unique identifier assigned to a process within the HyperBEAM system.
 
-### scheduler@1.0
+### ~scheduler@1.0
 A device used to assign a linear hashpath to an execution, such that all users may access it with a deterministic ordering.
 
 ### ~compute-lite@1.0
@@ -77,7 +77,7 @@ A device used to generate and validate proofs that a node is executing inside a 
 ### ~wasm64@1.0
 A device used to execute WebAssembly code, using the Web Assembly Micro-Runtime (WAMR) under-the-hood.
 
-### stack@1.0
+### ~stack@1.0
 A device used to execute an ordered set of devices over the same inputs, allowing users to create complex combinations of other devices.
 
 ### Trusted Execution Environment (TEE)

@@ -32,4 +32,4 @@ You can verify your Erlang installation with:
 erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'
 ```
 
-This should output `27` (or higher), indicating the OTP release version. 
+This should output `27`, indicating the OTP release version. 

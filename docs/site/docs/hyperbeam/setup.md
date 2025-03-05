@@ -49,20 +49,25 @@ This will start HyperBEAM using the default configuration inside the hb_opts.erl
 which preloads all devices and sets up default stores. All of these can be configured using
 the config.flat file with any overrides you specify.
 
+To verify that your HyperBEAM node is running correctly, you can check:
+
+```bash
+curl http://localhost:10000/~meta@1.0/info
+```
+If you receive a response with node information, your HyperBEAM installation is working properly.
+
 ## **4. Run HyperBEAM with Mainnet**
 
 To start HyperBEAM connected to the mainnet, you can use the `--eval` option with rebar3:
 
 ```bash
-rebar3 shell --eval 'start_mainnet:start(#{}).'
+rebar3 shell --eval "hb:start_mainnet(#{ port => 10001, priv_key_location => <<\"./wallet.json\">>})."
 ```
-
-## **Verification**
 
 To verify that your HyperBEAM node is running correctly, you can check:
 
 ```bash
-curl http://localhost:10000/~meta@1.0/info
+curl http://localhost:10001/~meta@1.0/info
 ```
 
 If you receive a response with node information, your HyperBEAM installation is working properly.

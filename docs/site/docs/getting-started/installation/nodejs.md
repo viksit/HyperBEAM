@@ -1,6 +1,6 @@
 # **Installing Node.js**
 
-Node.js is required for running the local Compute Unit (CU). This guide covers installing Node.js on Ubuntu 22.04.
+Node.js is required for running a legacynet compatible local Compute Unit (CU) with the delegated-compute@1.0 device, if you plan to do so. This guide covers installing Node.js on Ubuntu 22.04.
 
 ## Installing Node.js 22.x
 

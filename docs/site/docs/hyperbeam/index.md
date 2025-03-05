@@ -34,11 +34,11 @@ HyperBEAM supports numerous devices, each enabling different services. There are
 - **~json-iface@1.0**: Provides translation between JSON-encoded and HTTP message formats
 - **~compute-lite@1.0**: A lightweight WASM executor wrapper for legacy AO processes
 - **~snp@1.0**: Used for Trusted Execution Environment (TEE) operations
-- **p4@1.0**: Framework for node operators to sell usage of their hardware
+- **~p4@1.0**: Framework for node operators to sell usage of their hardware
 - **~simple-pay@1.0**: Simple pricing device for flat-fee execution
 - **~process@1.0**: Enables persistent, shared executions accessible by multiple users
-- **scheduler@1.0**: Assigns linear hashpaths to executions for deterministic ordering
-- **stack@1.0**: Executes an ordered set of devices over the same inputs
+- **~scheduler@1.0**: Assigns linear hashpaths to executions for deterministic ordering
+- **~stack@1.0**: Executes an ordered set of devices over the same inputs
 
 ## Components
 

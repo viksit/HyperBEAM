@@ -52,12 +52,12 @@ There are many ways to contribute to HyperBEAM:
 
 ### Erlang Code
 
-- Follow the [Erlang Coding Standards](https://github.com/inaka/erlang_guidelines)
-- Use meaningful variable and function names
-- Document public functions with EdDoc comments
-- Keep functions small and focused on a single task
-- Use pattern matching effectively
-- Write comprehensive unit tests
+- Look at the existing code and match its style
+- If you see a pattern in how things are written, follow it
+- If you're not sure, check what the majority of the codebase does
+- Write tests that match the existing test style
+- Focus on writing working code, not debating style
+- Remember: Cypherpunks write code!
 
 ### JavaScript/Node.js Code
 
