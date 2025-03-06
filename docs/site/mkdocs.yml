@@ -35,7 +35,7 @@ nav:
     - Overview: 'tee/index.md'
   - Guides:
     - Overview: 'guides/index.md'
-    # - Integration: 'guides/integration.md'
+    - HB JavaScript Client: 'guides/js-client-guide.md'
   - Reference:
     - Troubleshooting: 'reference/troubleshooting.md'
     - Glossary: 'reference/glossary.md'
