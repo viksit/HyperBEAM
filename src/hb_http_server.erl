@@ -22,7 +22,7 @@ start() ->
     ?event(http, {start_store, "mainnet-cache"}),
     Store = hb_opts:get(store, no_store, #{}),
     hb_store:start(Store),
-    Loaded =
+    LoadedConfig =
         case hb_opts:load(Loc = hb_opts:get(hb_config_location, <<"config.flat">>, #{})) of
             {ok, Conf} ->
                 ?event(boot, {loaded_config, Loc, Conf}),
@@ -31,15 +31,20 @@ start() ->
                 ?event(boot, {failed_to_load_config, Loc, Reason}),
                 #{}
         end,
+    MergedConfig =
+        maps:merge(
+            hb_opts:default_message(),
+            LoadedConfig
+        ),
     PrivWallet =
         hb:wallet(
             hb_opts:get(
                 priv_key_location,
                 <<"hyperbeam-key.json">>,
-                Loaded
+                LoadedConfig
             )
         ),
-    FormattedConfig = hb_util:debug_fmt(Loaded, 2),
+    FormattedConfig = hb_util:debug_fmt(MergedConfig, 2),
     io:format("~n"
         "===========================================================~n"
         "==    ██╗  ██╗██╗   ██╗██████╗ ███████╗██████╗           ==~n"
@@ -70,8 +75,8 @@ start() ->
                     io_lib:format(
                         "http://~s:~p",
                         [
-                            hb_opts:get(host, <<"localhost">>, Loaded),
-                            hb_opts:get(port, 8734, Loaded)
+                            hb_opts:get(host, <<"localhost">>, LoadedConfig),
+                            hb_opts:get(port, 8734, LoadedConfig)
                         ]
                     )
                 ),
@@ -83,10 +88,10 @@ start() ->
     ),
     
     start(
-        Loaded#{
+        LoadedConfig#{
             priv_wallet => PrivWallet,
             store => Store,
-            port => hb_opts:get(port, 8734, Loaded)
+            port => hb_opts:get(port, 8734, LoadedConfig)
         }
     ).
 start(Opts) ->
