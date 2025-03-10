@@ -121,7 +121,7 @@ default_message() ->
         debug_ids => false,
         debug_show_priv => if_present,
 		trusted => #{},
-        routes => [
+        routes => hb_converge:normalize_keys([
             #{
                 % Routes for the genesis-wasm device to use a local CU, if requested.
                 <<"template">> => <<"/result/.*">>,
@@ -151,7 +151,7 @@ default_message() ->
                         <<"opts">> => #{ http_client => gun }
                     }
             }
-        ],
+        ]),
         http_extra_opts =>
             #{
                 force_message => true,

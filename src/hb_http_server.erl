@@ -31,11 +31,10 @@ start() ->
                 ?event(boot, {failed_to_load_config, Loc, Reason}),
                 #{}
         end,
-    MergedConfig =
-        maps:merge(
-            hb_opts:default_message(),
-            LoadedConfig
-        ),
+    % Deep-merge the loaded config with the default node message, such that partial
+    % config options from users do not clobber the defaults.
+    DefaultOpts = hb_opts:default_message(),
+    MergedConfig = hb_converge:set(DefaultOpts, LoadedConfig, DefaultOpts),
     PrivWallet =
         hb:wallet(
             hb_opts:get(
