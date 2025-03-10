@@ -9,7 +9,7 @@
 %% `rebar3 eunit --test hb_converge_test_vectors:run_test'
 %% Comment/uncomment out as necessary.
 run_test() ->
-    hb_test_utils:run(start_as, normal, test_suite(), test_opts()).
+    hb_test_utils:run(deep_set, normal, test_suite(), test_opts()).
 
 %% @doc Run each test in the file with each set of options. Start and reset
 %% the store for each test.
@@ -495,10 +495,10 @@ set_with_device_test(Opts) ->
 
 deep_set_test(Opts) ->
     % First validate second layer changes are handled correctly.
-    Msg0 = #{ <<"a">> => #{ <<"b">> => <<"RESULT">> } },
-    ?assertMatch(#{ <<"a">> := #{ <<"b">> := <<"RESULT2">> } },
+    Msg0 = #{ <<"a">> => #{ <<"b">> => <<"RESULT">>, <<"c">> => <<"3">> } },
+    ?assertMatch(#{ <<"a">> := #{ <<"b">> := <<"RESULT2">>, <<"c">> := <<"3">> } },
         hb_converge:set(Msg0, <<"a/b">>, <<"RESULT2">>, Opts)),
-    ?assertMatch(#{ <<"a">> := #{ <<"b">> := <<"RESULT2">> } },
+    ?assertMatch(#{ <<"a">> := #{ <<"b">> := <<"RESULT2">>, <<"c">> := <<"3">> } },
         hb_converge:set(Msg0, [<<"a">>, <<"b">>], <<"RESULT2">>, Opts)),
     % Now validate deeper layer changes are handled correctly.
     Msg = #{ <<"a">> => #{ <<"b">> => #{ <<"c">> => <<"1">> } } },
@@ -573,6 +573,7 @@ deep_set_with_device_test(Opts) ->
                     #{
                         <<"device">> => Device,
                         <<"c">> => <<"1">>,
+                        <<"d">> => <<"4">>,
                         <<"modified">> => false
                     },
                 <<"modified">> => false
@@ -586,7 +587,8 @@ deep_set_with_device_test(Opts) ->
     ?assertEqual(<<"2">>, C),
     ?assertEqual(true, hb_converge:get(<<"modified">>, Outer)),
     ?assertEqual(false, hb_converge:get(<<"modified">>, A)),
-    ?assertEqual(true, hb_converge:get(<<"modified">>, B)).
+    ?assertEqual(true, hb_converge:get(<<"modified">>, B)),
+    ?assertEqual(<<"4">>, hb_converge:get(<<"a/b/d">>, Outer)).
 
 device_exports_test(Opts) ->
 	Msg = #{ <<"device">> => dev_message },
