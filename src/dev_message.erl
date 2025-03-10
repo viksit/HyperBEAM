@@ -370,6 +370,15 @@ set(Message1, NewValuesMsg, _Opts) ->
             [] -> [];
             _ -> [<<"attestations">>]
         end,
+    ?event(
+        {performing_set,
+            {conflicting_keys, ConflictingKeys},
+            {keys_to_unset, UnsetKeys},
+            {attestation_resets, WithoutAtts},
+            {new_values, NewValuesMsg},
+            {original_message, Message1}
+        }
+    ),
 	{
 		ok,
 		maps:merge(

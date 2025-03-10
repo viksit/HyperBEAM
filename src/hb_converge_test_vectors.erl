@@ -9,7 +9,7 @@
 %% `rebar3 eunit --test hb_converge_test_vectors:run_test'
 %% Comment/uncomment out as necessary.
 run_test() ->
-    hb_test_utils:run(deep_set, normal, test_suite(), test_opts()).
+    hb_test_utils:run(deep_merge, normal, test_suite(), test_opts()).
 
 %% @doc Run each test in the file with each set of options. Start and reset
 %% the store for each test.
@@ -65,6 +65,8 @@ test_suite() ->
             fun set_with_device_test/1},
         {deep_set, "deep set",
             fun deep_set_test/1},
+        {deep_merge, "deep merge",
+            fun deep_merge_test/1},
         {deep_set_with_device, "deep set with device",
             fun deep_set_with_device_test/1},
         {device_exports, "device exports",
@@ -584,11 +586,35 @@ deep_set_with_device_test(Opts) ->
     A = hb_converge:get(<<"a">>, Outer, Opts),
     B = hb_converge:get(<<"b">>, A, Opts),
     C = hb_converge:get(<<"c">>, B, Opts),
+    ?event({deep_set_with_device_test, {msg, Msg}, {outer, Outer}}),
     ?assertEqual(<<"2">>, C),
     ?assertEqual(true, hb_converge:get(<<"modified">>, Outer)),
     ?assertEqual(false, hb_converge:get(<<"modified">>, A)),
     ?assertEqual(true, hb_converge:get(<<"modified">>, B)),
     ?assertEqual(<<"4">>, hb_converge:get(<<"a/b/d">>, Outer)).
+
+deep_merge_test(Opts) ->
+    Msg1 =
+        #{
+            <<"a">> => <<"1">>,
+            <<"b">> => <<"2">>,
+            <<"c">> =>
+                #{
+                    <<"d">> => <<"4">>,
+                    <<"e">> => <<"5">>,
+                    <<"f">> => <<"6">>
+                }
+        },
+    Msg2 =
+        #{
+            <<"c">> => #{ <<"e">> => <<"REPLACED">> }
+        },
+    Merged = hb_converge:set(Msg1, Msg2, Opts),
+    ?assertEqual(<<"1">>, hb_converge:get(<<"a">>, Merged, Opts)),
+    ?assertEqual(<<"2">>, hb_converge:get(<<"b">>, Merged, Opts)),
+    ?assertEqual(<<"4">>, hb_converge:get(<<"c/d">>, Merged, Opts)),
+    ?assertEqual(<<"REPLACED">>, hb_converge:get(<<"c/e">>, Merged, Opts)),
+    ?assertEqual(<<"6">>, hb_converge:get(<<"c/f">>, Merged, Opts)).
 
 device_exports_test(Opts) ->
 	Msg = #{ <<"device">> => dev_message },
