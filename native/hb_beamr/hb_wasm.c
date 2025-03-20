@@ -60,7 +60,7 @@ wasm_trap_t* wasm_handle_import(void* env, const wasm_val_vec_t* args, wasm_val_
 
     DRV_DEBUG("Sending %d terms...", msg_index);
     // Send the message to the caller process
-    int msg_res = erl_drv_output_term(proc->port_term, msg, msg_index);
+    erl_drv_output_term(proc->port_term, msg, msg_index);
     // Wait for the response (we set this directly after the message was sent
     // so we have the lock, before Erlang sends us data back)
     drv_wait(proc->current_import->response_ready, proc->current_import->cond, &proc->current_import->ready);
@@ -248,7 +248,6 @@ void wasm_initialize_runtime(void* raw) {
             DRV_DEBUG("Found indirect function table: %s. Index: %d", name->data, i);
             proc->indirect_func_table_ix = i;
             const wasm_tabletype_t* table_type = wasm_externtype_as_tabletype_const(type);
-            const wasm_limits_t* table_limits = wasm_tabletype_limits(table_type);
             // Retrieve the indirect function table
             proc->indirect_func_table = wasm_extern_as_table(exported_externs.data[i]);
 
@@ -280,8 +279,7 @@ void wasm_initialize_runtime(void* raw) {
 
     DRV_DEBUG("Sending init message to Erlang. Elements: %d", msg_i);
 
-    int send_res = erl_drv_output_term(proc->port_term, init_msg, msg_i);
-    DRV_DEBUG("Send result: %d", send_res);
+    erl_drv_output_term(proc->port_term, init_msg, msg_i);
 
     proc->current_import = NULL;
     proc->is_initialized = 1;
@@ -470,11 +468,11 @@ int wasm_execute_indirect_function(Proc* proc, const char *field_name, const was
     DRV_DEBUG("Prepared %zu arguments for function call", prepared_args.size);
 
     uint64_t argc = prepared_args.size;
-    uint64_t* argv = malloc(sizeof(uint64_t) * argc);
+    uint32_t* argv_32 = malloc(sizeof(uint32_t) * argc);
     
-    // Convert prepared arguments to an array of 64-bit integers
+    // Convert prepared arguments to an array of 32-bit integers
     for (uint64_t i = 0; i < argc; ++i) {
-        argv[i] = prepared_args.data[i].of.i64;
+        argv_32[i] = (uint32_t)prepared_args.data[i].of.i64;
     }
 
 
@@ -490,9 +488,10 @@ int wasm_execute_indirect_function(Proc* proc, const char *field_name, const was
     /* ---------------- STACK SAVE -----------------*/
 
     // Attempt to call the function and check for any exceptions
-    if (!wasm_runtime_call_indirect(proc->exec_env, function_index, argc, argv)) {
-        if (wasm_runtime_get_exception(proc->exec_env)) {
-            DRV_DEBUG("%s", wasm_runtime_get_exception(proc->exec_env));
+    if (!wasm_runtime_call_indirect(proc->exec_env, function_index, argc, argv_32)) {
+        wasm_module_inst_t module_inst = wasm_runtime_get_module_inst(proc->exec_env);
+        if (wasm_runtime_get_exception(module_inst)) {
+            DRV_DEBUG("%s", wasm_runtime_get_exception(module_inst));
         }
         DRV_DEBUG("WASM function call failed");
         result = -1;
@@ -506,13 +505,13 @@ int wasm_execute_indirect_function(Proc* proc, const char *field_name, const was
 
 
     // Free allocated memory
-    free(argv);
+    free(argv_32);
     free(prepared_args.data);
     DRV_DEBUG("Function call completed successfully");
     return result;
 }
 
-int wasm_execute_exported_function(Proc* proc, const *function_name, wasm_val_t* params, wasm_val_t * results) {
+int wasm_execute_exported_function(Proc* proc, const char *function_name, wasm_val_t* params, wasm_val_t * results) {
     DRV_DEBUG("=== Calling Runtime Export Function ===");
     DRV_DEBUG("=   Function name: %s", function_name);
 
@@ -568,7 +567,7 @@ int wasm_execute_exported_function(Proc* proc, const *function_name, wasm_val_t*
     if (wasm_runtime_call_wasm_a(proc->exec_env, func->func_comm_rt, result_types->size, results, param_types->size, params)) {
         DRV_DEBUG("=   Function call successful");
     } else {
-        const char* exception = wasm_runtime_get_exception(proc->exec_env);
+        const char* exception = wasm_runtime_get_exception(wasm_runtime_get_module_inst(proc->exec_env));
         DRV_DEBUG("=   Function call failed: %s", exception);
         return -1;
     }
@@ -579,4 +578,3 @@ int wasm_execute_exported_function(Proc* proc, const *function_name, wasm_val_t*
 
     return 0;
 }
-
