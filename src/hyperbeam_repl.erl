@@ -329,28 +329,30 @@ Enter HTTP requests directly (e.g. \e[36mGET /~~message@1.0/hello?hello=world\e[
 
 %% @doc Print help information
 print_help() ->
-    io:format("
-\e[1;33mHyperBEAM REPL Commands:\e[0m
-  \e[36mhelp\e[0m    - Show this help text
-  \e[36mclear\e[0m   - Clear the screen
-  \e[36mhistory\e[0m - Show command history
-  \e[36mexit\e[0m    - Exit the REPL
-
-\e[1;33mHTTP Request Format:\e[0m
-  \e[36mGET /path?query=value\e[0m
-  \e[36mPOST /path {\"json\":\"body\"}\e[0m
-  \e[36mPUT /path Header1: value1; Header2: value2\e[0m
-  
-\e[1;33mExamples:\e[0m
-  \e[36mGET /~meta@1.0/info/address\e[0m
-  \e[36mGET /~message@1.0/hello?hello=world\e[0m
-  \e[36mPOST /~wasm@1.0/init/compute {\"wasm-function\":\"fac\",\"wasm-params\":[5]}\e[0m
-  
-\e[1;33mUseful Paths:\e[0m
-  \e[36m/~message@1.0/keys\e[0m - List available keys in message device
-  \e[36m/~meta@1.0/info\e[0m - Get node information
-  \e[36m/~meta@1.0/devices\e[0m - List available devices
-"),
+    HelpText = [
+        "\n",
+        "\e[1;33mHyperBEAM REPL Commands:\e[0m\n",
+        "  \e[36mhelp\e[0m    - Show this help text\n",
+        "  \e[36mclear\e[0m   - Clear the screen\n",
+        "  \e[36mhistory\e[0m - Show command history\n",
+        "  \e[36mexit\e[0m    - Exit the REPL\n",
+        "\n",
+        "\e[1;33mHTTP Request Format:\e[0m\n",
+        "  \e[36mGET /path?query=value\e[0m\n",
+        "  \e[36mPOST /path {\"json\":\"body\"}\e[0m\n",
+        "  \e[36mPUT /path Header1: value1; Header2: value2\e[0m\n",
+        "  \n",
+        "\e[1;33mExamples:\e[0m\n",
+        "  \e[36mGET /~meta@1.0/info/address\e[0m\n",
+        "  \e[36mGET /~message@1.0/hello?hello=world\e[0m\n",
+        "  \e[36mPOST /~wasm@1.0/init/compute {\"wasm-function\":\"fac\",\"wasm-params\":[5]}\e[0m\n",
+        "  \n",
+        "\e[1;33mUseful Paths:\e[0m\n",
+        "  \e[36m/~message@1.0/keys\e[0m - List available keys in message device\n",
+        "  \e[36m/~meta@1.0/info\e[0m - Get node information\n",
+        "  \e[36m/~meta@1.0/devices\e[0m - List available devices\n"
+    ],
+    io:put_chars(HelpText),
     ok.
 
 %% @doc Print command history
