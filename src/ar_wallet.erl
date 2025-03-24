@@ -147,10 +147,12 @@ load_key(Addr) ->
     case filelib:is_file(Path) of
         false ->
             Path2 = wallet_filepath2(hb_util:encode(Addr)),
+            io:format("snowy123~n"),
             case filelib:is_file(Path2) of
                 false ->
                     not_found;
                 true ->
+					io:format("snowy123~n"),
                     load_keyfile(Path2)
             end;
         true ->
@@ -160,6 +162,7 @@ load_key(Addr) ->
 %% @doc Extract the public and private key from a keyfile.
 load_keyfile(File) ->
     {ok, Body} = file:read_file(File),
+	io:format("snowy123~n"),
     {Key} = jiffy:decode(Body),
     {Pub, Priv, KeyType} =
         case lists:keyfind(<<"kty">>, 1, Key) of
