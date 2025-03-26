@@ -163,6 +163,47 @@
 			margin: 0;
 			overflow-x: auto;
 		}
+
+		/* Multipart response styles */
+		.multipart-container {
+			font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+			font-size: 0.9rem;
+			line-height: 1.4;
+		}
+
+		.multipart-part {
+			margin-bottom: 12px;
+			padding: 10px;
+			background-color: #ffffff;
+			border: 1px solid #e2e8f0;
+			border-radius: 4px;
+		}
+
+		.multipart-part:last-child {
+			margin-bottom: 0;
+		}
+
+		.multipart-header {
+			padding-bottom: 6px;
+			margin-bottom: 6px;
+			border-bottom: 1px dashed #e2e8f0;
+			color: #6366f1;
+		}
+
+		.multipart-header-line {
+			display: block;
+			margin-bottom: 2px;
+		}
+
+		.multipart-header-name {
+			font-weight: 600;
+			color: #8b5cf6;
+		}
+
+		.multipart-content {
+			white-space: pre-wrap;
+			word-break: break-word;
+		}
 	</style>
 </head>
 
@@ -491,7 +532,13 @@
 
 					// Format response based on content type
 					let formattedResponse;
-					if (contentType.includes('application/json')) {
+					let isMultipart = isMultipartResponse(response.headers);
+					let boundary = '';
+
+					if (isMultipart) {
+						boundary = extractBoundary(response.headers.get('content-type'));
+						formattedResponse = formatMultipartResponse(responseText, boundary);
+					} else if (contentType.includes('application/json')) {
 						try {
 							const jsonResponse = JSON.parse(responseText);
 							formattedResponse = `<pre><code class="language-json">${JSON.stringify(jsonResponse, null, 2)}</code></pre>`;
@@ -546,18 +593,95 @@
 
 			// Format headers for display
 			function formatHeaders(headers) {
-				if (!headers) return '<p class="text-gray-500">No headers available</p>';
-
-				let headersHtml = '<div class="header-title">Headers:</div>';
-
-				// Convert headers object to array and sort alphabetically
-				const headerEntries = Array.from(headers.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+				let headersHtml = '';
+				const headerEntries = headers.entries ? Array.from(headers.entries()) : [];
 
 				for (const [name, value] of headerEntries) {
 					headersHtml += `<span class="header-line"><span class="header-name">${escapeHtml(name)}:</span> ${escapeHtml(value)}</span>`;
 				}
 
 				return headersHtml;
+			}
+
+			// Check if response is multipart/form-data
+			function isMultipartResponse(headers) {
+				const contentType = headers.get('content-type') || '';
+				return contentType.toLowerCase().includes('multipart/form-data');
+			}
+
+			// Extract boundary from Content-Type header
+			function extractBoundary(contentType) {
+				const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+				return boundaryMatch ? (boundaryMatch[1] || boundaryMatch[2]) : '';
+			}
+
+			// Format multipart response
+			function formatMultipartResponse(responseText, boundary) {
+				if (!boundary) {
+					return `<pre>${escapeHtml(responseText)}</pre>`;
+				}
+
+				// Split the response by boundary
+				const boundaryDelimiter = `--${boundary}`;
+				const parts = responseText.split(boundaryDelimiter).filter(part => 
+					part.trim() && !part.startsWith('--')
+				);
+
+				if (parts.length === 0) {
+					return `<pre>${escapeHtml(responseText)}</pre>`;
+				}
+
+				let html = '<div class="multipart-container">';
+				
+				for (const part of parts) {
+					html += formatMultipartPart(part.trim());
+				}
+				
+				html += '</div>';
+				return html;
+			}
+
+			// Format a single part of multipart response
+			function formatMultipartPart(part) {
+				// Split headers and content
+				const headerContentSplit = part.indexOf('\r\n\r\n') !== -1 
+					? part.split('\r\n\r\n', 2) 
+					: part.split('\n\n', 2);
+				
+				let headers = '';
+				let content = '';
+				
+				if (headerContentSplit.length === 2) {
+					headers = headerContentSplit[0];
+					content = headerContentSplit[1];
+				} else {
+					content = part;
+				}
+
+				// Format headers
+				let formattedHeaders = '';
+				if (headers) {
+					const headerLines = headers.split(/\r?\n/);
+					for (const line of headerLines) {
+						if (line.trim()) {
+							const [name, ...valueParts] = line.split(':');
+							const value = valueParts.join(':').trim();
+							formattedHeaders += `<span class="multipart-header-line"><span class="multipart-header-name">${escapeHtml(name)}:</span> ${escapeHtml(value)}</span>`;
+						}
+					}
+				}
+
+				// Build the part HTML
+				let html = '<div class="multipart-part">';
+				
+				if (formattedHeaders) {
+					html += `<div class="multipart-header">${formattedHeaders}</div>`;
+				}
+				
+				html += `<div class="multipart-content">${escapeHtml(content)}</div>`;
+				html += '</div>';
+				
+				return html;
 			}
 
 			// Display error message
