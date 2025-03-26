@@ -134,7 +134,19 @@
 		}
 
 		.header-name {
-			color: #eab308;
+			color: #8b5cf6;
+		}
+
+		/* Clickable command styles */
+		.clickable-command {
+			cursor: pointer;
+			transition: background-color 0.1s;
+			padding: 1px 3px;
+			border-radius: 2px;
+		}
+
+		.clickable-command:hover {
+			background-color: rgba(79, 70, 229, 0.1);
 		}
 	</style>
 </head>
@@ -290,7 +302,25 @@
 			function displayCommand(command) {
 				const commandDiv = document.createElement('div');
 				commandDiv.className = 'mb-1';
-				commandDiv.innerHTML = `<span class="text-emerald-600">BEAMWeaver></span> <span class="text-gray-800">${escapeHtml(command)}</span>`;
+
+				// Make the command clickable
+				const commandSpan = document.createElement('span');
+				commandSpan.className = 'clickable-command';
+				commandSpan.textContent = command;
+				commandSpan.addEventListener('click', function() {
+					commandInput.value = command;
+					commandInput.focus();
+				});
+
+				// Create the prefix
+				const prefixSpan = document.createElement('span');
+				prefixSpan.className = 'text-indigo-600';
+				prefixSpan.textContent = 'BEAMWeaver> ';
+
+				// Append elements
+				commandDiv.appendChild(prefixSpan);
+				commandDiv.appendChild(commandSpan);
+
 				terminalOutput.appendChild(commandDiv);
 				scrollToBottom();
 			}
@@ -404,7 +434,7 @@
 
 				try {
 					// Show loading indicator
-					responseDiv.innerHTML = '<p class="text-blue-600">Sending request...</p>';
+					responseDiv.innerHTML = '<p class="text-blue-500">Sending request...</p>';
 					terminalOutput.appendChild(responseDiv);
 					scrollToBottom();
 
@@ -460,18 +490,23 @@
 					// Format headers
 					const headersHtml = formatHeaders(response.headers);
 
+					// Create clickable command for this request
+					const fullCommand = method + ' ' + path + (body ? ' ' + body : '');
+					const clickableCommand = `<span class="clickable-command" onclick="setCommandInput('${escapeHtml(fullCommand.replace(/'/g, "\\'"))}')">${escapeHtml(method)} ${escapeHtml(path)}${body ? ' ...' : ''}</span>`;
+
 					// Display response with status and headers
 					responseDiv.innerHTML = `
               <div class="flex items-center mb-1">
-                <span class="text-${response.ok ? 'emerald' : 'red'}-600 mr-2">●</span>
+                <span class="text-${response.ok ? 'indigo' : 'red'}-600 mr-2">●</span>
                 <span class="text-gray-700">${response.status} ${response.statusText}</span>
+                <span class="ml-auto text-xs text-gray-500">Click to rerun: ${clickableCommand}</span>
               </div>
               
-              <!-- Headers (collapsible) -->
+              <!-- Headers Toggle -->
               <div class="headers-container">
                 <div class="headers-toggle" onclick="toggleHeaders(this)">
                   <div class="toggle-icon">▶</div>
-                  <span class="font-medium text-gray-700">Headers</span>
+                  <span class="text-indigo-500">Headers</span>
                 </div>
                 <div class="headers-content">
                   ${headersHtml}
@@ -529,7 +564,7 @@
 				terminalOutput.scrollTop = terminalOutput.scrollHeight;
 			}
 
-			// Make toggleHeaders function available globally
+			// Make toggleHeaders and setCommandInput functions available globally
 			window.toggleHeaders = function (element) {
 				const content = element.nextElementSibling;
 				const icon = element.querySelector('.toggle-icon');
@@ -541,6 +576,12 @@
 					content.classList.add('expanded');
 					icon.classList.add('expanded');
 				}
+			};
+
+			// Function to set command input value (used by clickable commands)
+			window.setCommandInput = function(command) {
+				commandInput.value = command;
+				commandInput.focus();
 			};
 		});
 	</script>
