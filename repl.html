@@ -237,6 +237,7 @@
 			display: flex;
 			border-bottom: 1px solid #e2e8f0;
 			margin-bottom: 12px;
+			margin-top: 0;
 		}
 
 		.multipart-tab {
@@ -713,12 +714,7 @@
 				}
 
 				// Create tabs container
-				let html = `
-					<div class="multipart-tabs">
-						<div class="multipart-tab active" onclick="switchMultipartTab(this, 'formatted')">Formatted</div>
-						<div class="multipart-tab" onclick="switchMultipartTab(this, 'raw')">Raw</div>
-					</div>
-				`;
+				let html = `<div class="multipart-tabs"><div class="multipart-tab active" onclick="switchMultipartTab(this, 'formatted')">Formatted</div><div class="multipart-tab" onclick="switchMultipartTab(this, 'raw')">Raw</div></div>`;
 				
 				// Formatted view
 				html += '<div class="multipart-tab-content active" data-tab="formatted">';
