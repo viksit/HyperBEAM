@@ -134,6 +134,7 @@ new_server(RawNodeMsg) ->
                 % {HostMatch, list({PathMatch, Handler, InitialState})}
                 {'_', [
                     {"/", cowboy_static, {priv_file, hb, "index.html"}},
+                    {"/repl", cowboy_static, {priv_file, hb, "repl.html"}},
                     {
                         "/metrics/[:registry]",
                         prometheus_cowboy2_handler,
