@@ -148,6 +148,21 @@
 		.clickable-command:hover {
 			background-color: rgba(79, 70, 229, 0.1);
 		}
+
+		/* Response body container styles */
+		.response-body-container {
+			margin-top: 8px;
+			padding: 12px;
+			background-color: #f8fafc;
+			border: 1px solid #e2e8f0;
+			border-radius: 6px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.response-body-container pre {
+			margin: 0;
+			overflow-x: auto;
+		}
 	</style>
 </head>
 
@@ -514,7 +529,9 @@
               </div>
               
               <!-- Response Body -->
-              <pre class="overflow-x-auto">${formattedResponse}</pre>
+              <div class="response-body-container">
+                ${formattedResponse}
+              </div>
             `;
 
 					// Apply syntax highlighting
