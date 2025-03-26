@@ -204,6 +204,54 @@
 			white-space: pre-wrap;
 			word-break: break-word;
 		}
+
+		/* Tabs for multipart response */
+		.multipart-tabs {
+			display: flex;
+			border-bottom: 1px solid #e2e8f0;
+			margin-bottom: 12px;
+		}
+
+		.multipart-tab {
+			padding: 6px 12px;
+			cursor: pointer;
+			border: 1px solid transparent;
+			border-bottom: none;
+			border-top-left-radius: 4px;
+			border-top-right-radius: 4px;
+			margin-right: 4px;
+			font-size: 0.85rem;
+			font-weight: 500;
+			color: #64748b;
+		}
+
+		.multipart-tab:hover {
+			background-color: #f1f5f9;
+		}
+
+		.multipart-tab.active {
+			background-color: #ffffff;
+			border-color: #e2e8f0;
+			color: #6366f1;
+			margin-bottom: -1px;
+		}
+
+		.multipart-tab-content {
+			display: none;
+		}
+
+		.multipart-tab-content.active {
+			display: block;
+		}
+
+		.multipart-raw {
+			padding: 10px;
+			background-color: #ffffff;
+			border: 1px solid #e2e8f0;
+			border-radius: 4px;
+			white-space: pre-wrap;
+			word-break: break-word;
+		}
 	</style>
 </head>
 
@@ -631,13 +679,30 @@
 					return `<pre>${escapeHtml(responseText)}</pre>`;
 				}
 
-				let html = '<div class="multipart-container">';
+				// Create tabs container
+				let html = `
+					<div class="multipart-tabs">
+						<div class="multipart-tab active" onclick="switchMultipartTab(this, 'formatted')">Formatted</div>
+						<div class="multipart-tab" onclick="switchMultipartTab(this, 'raw')">Raw</div>
+					</div>
+				`;
+				
+				// Formatted view
+				html += '<div class="multipart-tab-content active" data-tab="formatted">';
+				html += '<div class="multipart-container">';
 				
 				for (const part of parts) {
 					html += formatMultipartPart(part.trim());
 				}
 				
 				html += '</div>';
+				html += '</div>';
+				
+				// Raw view
+				html += '<div class="multipart-tab-content" data-tab="raw">';
+				html += `<div class="multipart-raw">${escapeHtml(responseText)}</div>`;
+				html += '</div>';
+				
 				return html;
 			}
 
@@ -716,6 +781,30 @@
 				} else {
 					content.classList.add('expanded');
 					icon.classList.add('expanded');
+				}
+			};
+
+			// Switch between multipart tabs
+			window.switchMultipartTab = function(tabElement, tabName) {
+				// Get the parent container
+				const tabsContainer = tabElement.parentElement;
+				const tabContentContainer = tabsContainer.parentElement;
+				
+				// Deactivate all tabs
+				const tabs = tabsContainer.querySelectorAll('.multipart-tab');
+				tabs.forEach(tab => tab.classList.remove('active'));
+				
+				// Activate the clicked tab
+				tabElement.classList.add('active');
+				
+				// Hide all tab contents
+				const tabContents = tabContentContainer.querySelectorAll('.multipart-tab-content');
+				tabContents.forEach(content => content.classList.remove('active'));
+				
+				// Show the selected tab content
+				const selectedContent = tabContentContainer.querySelector(`.multipart-tab-content[data-tab="${tabName}"]`);
+				if (selectedContent) {
+					selectedContent.classList.add('active');
 				}
 			};
 
