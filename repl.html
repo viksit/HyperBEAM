@@ -439,7 +439,7 @@
 				const commandSpan = document.createElement('span');
 				commandSpan.className = 'clickable-command';
 				commandSpan.textContent = command;
-				commandSpan.addEventListener('click', function() {
+				commandSpan.addEventListener('click', function () {
 					commandInput.value = command;
 					commandInput.focus();
 				});
@@ -637,7 +637,7 @@
               <div class="flex items-center mb-1">
                 <span class="text-${response.ok ? 'indigo' : 'red'}-600 mr-2">●</span>
                 <span class="text-gray-700">${response.status} ${response.statusText}</span>
-                <span class="ml-auto text-xs text-gray-500">Click to rerun: ${clickableCommand}</span>
+                <!--<span class="ml-auto text-xs text-gray-500">Click to rerun: ${clickableCommand}</span>-->
               </div>
               
               <!-- Headers Toggle -->
@@ -705,7 +705,7 @@
 
 				// Split the response by boundary
 				const boundaryDelimiter = `--${boundary}`;
-				const parts = responseText.split(boundaryDelimiter).filter(part => 
+				const parts = responseText.split(boundaryDelimiter).filter(part =>
 					part.trim() && !part.startsWith('--')
 				);
 
@@ -715,36 +715,36 @@
 
 				// Create tabs container
 				let html = `<div class="multipart-tabs"><div class="multipart-tab active" onclick="switchMultipartTab(this, 'formatted')">Formatted</div><div class="multipart-tab" onclick="switchMultipartTab(this, 'raw')">Raw</div></div>`;
-				
+
 				// Formatted view
 				html += '<div class="multipart-tab-content active" data-tab="formatted">';
 				html += '<div class="multipart-container">';
-				
+
 				for (const part of parts) {
 					html += formatMultipartPart(part.trim());
 				}
-				
+
 				html += '</div>';
 				html += '</div>';
-				
+
 				// Raw view
 				html += '<div class="multipart-tab-content" data-tab="raw">';
 				html += `<div class="multipart-raw">${escapeHtml(responseText)}</div>`;
 				html += '</div>';
-				
+
 				return html;
 			}
 
 			// Format a single part of multipart response
 			function formatMultipartPart(part) {
 				// Split headers and content
-				const headerContentSplit = part.indexOf('\r\n\r\n') !== -1 
-					? part.split('\r\n\r\n', 2) 
+				const headerContentSplit = part.indexOf('\r\n\r\n') !== -1
+					? part.split('\r\n\r\n', 2)
 					: part.split('\n\n', 2);
-				
+
 				let headers = '';
 				let content = '';
-				
+
 				if (headerContentSplit.length === 2) {
 					headers = headerContentSplit[0];
 					content = headerContentSplit[1];
@@ -767,14 +767,14 @@
 
 				// Build the part HTML
 				let html = '<div class="multipart-part">';
-				
+
 				if (formattedHeaders) {
 					html += `<div class="multipart-header">${formattedHeaders}</div>`;
 				}
-				
+
 				html += `<div class="multipart-content">${escapeHtml(content)}</div>`;
 				html += '</div>';
-				
+
 				return html;
 			}
 
@@ -814,22 +814,22 @@
 			};
 
 			// Switch between multipart tabs
-			window.switchMultipartTab = function(tabElement, tabName) {
+			window.switchMultipartTab = function (tabElement, tabName) {
 				// Get the parent container
 				const tabsContainer = tabElement.parentElement;
 				const tabContentContainer = tabsContainer.parentElement;
-				
+
 				// Deactivate all tabs
 				const tabs = tabsContainer.querySelectorAll('.multipart-tab');
 				tabs.forEach(tab => tab.classList.remove('active'));
-				
+
 				// Activate the clicked tab
 				tabElement.classList.add('active');
-				
+
 				// Hide all tab contents
 				const tabContents = tabContentContainer.querySelectorAll('.multipart-tab-content');
 				tabContents.forEach(content => content.classList.remove('active'));
-				
+
 				// Show the selected tab content
 				const selectedContent = tabContentContainer.querySelector(`.multipart-tab-content[data-tab="${tabName}"]`);
 				if (selectedContent) {
@@ -855,7 +855,7 @@
 			};
 
 			// Function to set command input value (used by clickable commands)
-			window.setCommandInput = function(command) {
+			window.setCommandInput = function (command) {
 				commandInput.value = command;
 				commandInput.focus();
 			};
