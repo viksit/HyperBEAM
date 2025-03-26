@@ -152,16 +152,43 @@
 		/* Response body container styles */
 		.response-body-container {
 			margin-top: 8px;
-			padding: 12px;
-			background-color: #f8fafc;
-			border: 1px solid #e2e8f0;
-			border-radius: 6px;
-			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+			margin-bottom: 2px;
 		}
 
-		.response-body-container pre {
-			margin: 0;
-			overflow-x: auto;
+		.response-body-toggle {
+			cursor: pointer;
+			user-select: none;
+			display: flex;
+			align-items: center;
+			padding: 1px 0;
+		}
+
+		.response-body-toggle:hover {
+			background-color: #f8fafc;
+		}
+
+		.response-body-title {
+			color: #6366f1;
+			font-size: 0.875rem;
+			margin-left: 4px;
+		}
+
+		.response-body-content {
+			display: none;
+			padding: 6px;
+			background-color: #f1f5f9;
+			border-radius: 4px;
+			font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+			white-space: pre-wrap;
+			font-size: 0.9rem;
+			line-height: 1.3;
+			word-break: break-word;
+			overflow-wrap: break-word;
+			max-width: 100%;
+		}
+
+		.response-body-content.expanded {
+			display: block;
 		}
 
 		/* Multipart response styles */
@@ -625,7 +652,13 @@
               
               <!-- Response Body -->
               <div class="response-body-container">
-                ${formattedResponse}
+                <div class="response-body-toggle" onclick="toggleResponseBody(this)">
+                  <div class="toggle-icon expanded">▶</div>
+                  <span class="text-indigo-500">Response Body</span>
+                </div>
+                <div class="response-body-content expanded">
+                  ${formattedResponse}
+                </div>
               </div>
             `;
 
@@ -805,6 +838,23 @@
 				const selectedContent = tabContentContainer.querySelector(`.multipart-tab-content[data-tab="${tabName}"]`);
 				if (selectedContent) {
 					selectedContent.classList.add('active');
+				}
+			};
+
+			// Toggle response body visibility
+			window.toggleResponseBody = function (element) {
+				const container = element.closest('.response-body-container');
+				const content = container.querySelector('.response-body-content');
+				const icon = element.querySelector('.toggle-icon');
+
+				if (content.classList.contains('expanded')) {
+					content.classList.remove('expanded');
+					container.classList.remove('expanded');
+					icon.classList.remove('expanded');
+				} else {
+					content.classList.add('expanded');
+					container.classList.add('expanded');
+					icon.classList.add('expanded');
 				}
 			};
 
