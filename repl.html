@@ -1,375 +1,549 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HyperBEAM REPL</title>
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Prism.js for syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-http.min.js"></script>
-    <style>
-      .terminal {
-        font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-      }
-      
-      .command-input {
-        caret-color: rgb(74, 222, 128);
-        outline: none;
-      }
-      
-      .command-input:focus {
-        outline: none;
-      }
-      
-      /* Custom scrollbar */
-      .terminal-output::-webkit-scrollbar {
-        width: 8px;
-      }
-      
-      .terminal-output::-webkit-scrollbar-track {
-        background: #1e293b;
-      }
-      
-      .terminal-output::-webkit-scrollbar-thumb {
-        background: #475569;
-        border-radius: 4px;
-      }
-      
-      .terminal-output::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
-      }
-      
-      /* Animation for cursor */
-      @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-      }
-      
-      .cursor {
-        display: inline-block;
-        width: 8px;
-        height: 18px;
-        background-color: rgb(74, 222, 128);
-        animation: blink 1s step-end infinite;
-        vertical-align: middle;
-      }
-    </style>
-  </head>
-  <body class="bg-slate-900 text-gray-200 h-screen flex flex-col">
-    <!-- Header -->
-    <header class="bg-slate-800 p-4 border-b border-slate-700">
-      <div class="container mx-auto flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-green-400">HyperBEAM REPL</h1>
-        <div class="flex items-center space-x-4">
-          <div class="flex items-center">
-            <div class="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
-            <span class="text-sm text-green-400">Connected</span>
-          </div>
-          <button id="clear-btn" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm transition">
-            Clear
-          </button>
-        </div>
-      </div>
-    </header>
 
-    <!-- Main Terminal Area -->
-    <main class="flex-1 overflow-hidden p-4">
-      <div class="container mx-auto h-full flex flex-col bg-slate-800 rounded-lg border border-slate-700 shadow-lg">
-        <!-- Terminal Output -->
-        <div id="terminal-output" class="terminal-output flex-1 p-4 overflow-y-auto terminal">
-          <div class="text-green-400 mb-4">
-            <p>HyperBEAM REPL v1.0.0</p>
-            <p>Type 'help' to see available commands</p>
-            <p>Use arrow keys (↑/↓) to navigate command history</p>
-          </div>
-        </div>
-        
-        <!-- Terminal Input -->
-        <div class="terminal-input border-t border-slate-700 p-4 flex items-center terminal">
-          <span class="text-green-400 mr-2">></span>
-          <div class="flex-1 relative">
-            <input 
-              id="command-input" 
-              type="text" 
-              class="command-input w-full bg-transparent text-gray-200 focus:outline-none"
-              autocomplete="off"
-              spellcheck="false"
-            />
-          </div>
-        </div>
-      </div>
-    </main>
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>BEAMWeaver - HyperBEAM REPL</title>
+	<!-- Tailwind CSS via CDN -->
+	<script src="https://cdn.tailwindcss.com"></script>
+	<!-- Prism.js for syntax highlighting -->
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-http.min.js"></script>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+		}
 
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const terminalOutput = document.getElementById('terminal-output');
-        const commandInput = document.getElementById('command-input');
-        const clearBtn = document.getElementById('clear-btn');
-        
-        // Command history management
-        const commandHistory = [];
-        let historyPosition = -1;
-        let currentCommand = '';
-        
-        // Focus input on page load
-        commandInput.focus();
-        
-        // Keep focus on input when clicking anywhere in the terminal
-        document.querySelector('.terminal-input').addEventListener('click', () => {
-          commandInput.focus();
-        });
-        
-        // Clear terminal output
-        clearBtn.addEventListener('click', () => {
-          terminalOutput.innerHTML = '';
-          addWelcomeMessage();
-        });
-        
-        // Add welcome message
-        function addWelcomeMessage() {
-          const welcomeDiv = document.createElement('div');
-          welcomeDiv.className = 'text-green-400 mb-4';
-          welcomeDiv.innerHTML = `
-            <p>HyperBEAM REPL v1.0.0</p>
+		.terminal {
+			font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+		}
+
+		.command-input {
+			caret-color: #10b981;
+			outline: none;
+		}
+
+		.command-input:focus {
+			outline: none;
+		}
+
+		/* Custom scrollbar */
+		.terminal-output::-webkit-scrollbar {
+			width: 8px;
+		}
+
+		.terminal-output::-webkit-scrollbar-track {
+			background: #f1f5f9;
+		}
+
+		.terminal-output::-webkit-scrollbar-thumb {
+			background: #cbd5e1;
+			border-radius: 4px;
+		}
+
+		.terminal-output::-webkit-scrollbar-thumb:hover {
+			background: #94a3b8;
+		}
+
+		/* Animation for cursor */
+		@keyframes blink {
+
+			0%,
+			100% {
+				opacity: 1;
+			}
+
+			50% {
+				opacity: 0;
+			}
+		}
+
+		.cursor {
+			display: inline-block;
+			width: 8px;
+			height: 18px;
+			background-color: #10b981;
+			animation: blink 1s step-end infinite;
+			vertical-align: middle;
+		}
+
+		/* Headers collapsible styles */
+		.headers-container {
+			margin-bottom: 2px;
+		}
+
+		.headers-toggle {
+			cursor: pointer;
+			user-select: none;
+			display: flex;
+			align-items: center;
+			padding: 1px 0;
+		}
+
+		.headers-toggle:hover {
+			background-color: #f8fafc;
+		}
+
+		.toggle-icon {
+			display: inline-flex;
+			width: 12px;
+			height: 12px;
+			justify-content: center;
+			align-items: center;
+			margin-right: 4px;
+			transition: transform 0.2s;
+		}
+
+		.toggle-icon.expanded {
+			transform: rotate(90deg);
+		}
+
+		.headers-content {
+			display: none;
+			padding: 6px;
+			background-color: #f1f5f9;
+			border-radius: 4px;
+			font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+			white-space: pre-wrap;
+			font-size: 0.9rem;
+			line-height: 1.3;
+			word-break: break-word;
+			overflow-wrap: break-word;
+			max-width: 100%;
+		}
+
+		.headers-content.expanded {
+			display: block;
+		}
+
+		.header-title {
+			color: #10b981;
+			font-weight: bold;
+			margin-bottom: 3px;
+		}
+
+		.header-line {
+			display: block;
+			margin-bottom: 1px;
+			overflow-wrap: break-word;
+			word-break: break-all;
+		}
+
+		.header-name {
+			color: #eab308;
+		}
+	</style>
+</head>
+
+<body class="bg-white text-gray-800 h-screen flex flex-col">
+	<!-- Header -->
+	<header class="bg-gray-100 border-b border-gray-200 flex justify-between items-center px-3 py-2">
+		<h1 class="text-lg font-bold text-emerald-600">BEAMWeaver</h1>
+		<div class="flex items-center space-x-3">
+			<div class="flex items-center">
+				<div class="h-2 w-2 rounded-full bg-emerald-500 mr-1 animate-pulse"></div>
+				<span class="text-xs text-emerald-600">Connected</span>
+			</div>
+			<button id="clear-btn" class="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs transition">
+				Clear
+			</button>
+		</div>
+	</header>
+
+	<!-- Main Terminal Area -->
+	<main class="flex-1 overflow-hidden">
+		<div class="h-full flex flex-col">
+			<!-- Terminal Output -->
+			<div id="terminal-output" class="terminal-output flex-1 p-3 overflow-y-auto terminal">
+				<div class="text-emerald-600 mb-3">
+					<p>BEAMWeaver v1.0.0</p>
+					<p>Type 'help' to see available commands</p>
+					<p>Use arrow keys (↑/↓) to navigate command history</p>
+				</div>
+			</div>
+
+			<!-- Terminal Input -->
+			<div class="terminal-input border-t border-gray-200 p-2 flex items-center terminal">
+				<span class="text-emerald-600 mr-2">BEAMWeaver></span>
+				<div class="flex-1 relative">
+					<input id="command-input" type="text"
+						class="command-input w-full bg-transparent text-gray-800 focus:outline-none" autocomplete="off"
+						spellcheck="false" />
+				</div>
+			</div>
+		</div>
+	</main>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const terminalOutput = document.getElementById('terminal-output');
+			const commandInput = document.getElementById('command-input');
+			const clearBtn = document.getElementById('clear-btn');
+
+			// Command history management
+			const commandHistory = [];
+			let historyPosition = -1;
+			let currentCommand = '';
+
+			// Focus input on page load
+			commandInput.focus();
+
+			// Keep focus on input when clicking anywhere in the terminal
+			document.querySelector('.terminal-input').addEventListener('click', () => {
+				commandInput.focus();
+			});
+
+			// Clear terminal output
+			clearBtn.addEventListener('click', () => {
+				terminalOutput.innerHTML = '';
+				addWelcomeMessage();
+			});
+
+			// Add welcome message
+			function addWelcomeMessage() {
+				const welcomeDiv = document.createElement('div');
+				welcomeDiv.className = 'text-emerald-600 mb-3';
+				welcomeDiv.innerHTML = `
+            <p>BEAMWeaver v1.0.0</p>
             <p>Type 'help' to see available commands</p>
             <p>Use arrow keys (↑/↓) to navigate command history</p>
           `;
-          terminalOutput.appendChild(welcomeDiv);
-        }
-        
-        // Process command input
-        commandInput.addEventListener('keydown', async (e) => {
-          // Handle arrow key navigation
-          if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            navigateHistory('up');
-          } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            navigateHistory('down');
-          } else if (e.key === 'Enter') {
-            e.preventDefault();
-            const command = commandInput.value.trim();
+				terminalOutput.appendChild(welcomeDiv);
+			}
+
+			// Process command input
+			commandInput.addEventListener('keydown', async (e) => {
+				// Handle arrow key navigation
+				if (e.key === 'ArrowUp') {
+					e.preventDefault();
+					navigateHistory('up');
+				} else if (e.key === 'ArrowDown') {
+					e.preventDefault();
+					navigateHistory('down');
+				} else if (e.key === 'Enter') {
+					e.preventDefault();
+					const command = commandInput.value.trim();
+
+					if (command) {
+						// Add to history only if it's not the same as the last command
+						if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== command) {
+							commandHistory.push(command);
+							// Limit history size to 100 items
+							if (commandHistory.length > 100) {
+								commandHistory.shift();
+							}
+						}
+
+						// Reset history position
+						historyPosition = -1;
+						currentCommand = '';
+
+						// Display command
+						displayCommand(command);
+
+						// Process command
+						await processCommand(command);
+
+						// Clear input
+						commandInput.value = '';
+					}
+				}
+			});
+
+			// Navigate through command history
+			function navigateHistory(direction) {
+				if (commandHistory.length === 0) return;
+
+				if (direction === 'up') {
+					// Save current command if we're just starting to navigate
+					if (historyPosition === -1) {
+						currentCommand = commandInput.value;
+					}
+
+					// Move up in history if possible
+					if (historyPosition < commandHistory.length - 1) {
+						historyPosition++;
+						commandInput.value = commandHistory[commandHistory.length - 1 - historyPosition];
+					}
+				} else if (direction === 'down') {
+					// Move down in history or restore current command
+					if (historyPosition > 0) {
+						historyPosition--;
+						commandInput.value = commandHistory[commandHistory.length - 1 - historyPosition];
+					} else if (historyPosition === 0) {
+						historyPosition = -1;
+						commandInput.value = currentCommand;
+					}
+				}
+
+				// Move cursor to end of input
+				setTimeout(() => {
+					commandInput.selectionStart = commandInput.selectionEnd = commandInput.value.length;
+				}, 0);
+			}
+
+			// Display command in terminal
+			function displayCommand(command) {
+				const commandDiv = document.createElement('div');
+				commandDiv.className = 'mb-1';
+				commandDiv.innerHTML = `<span class="text-emerald-600">BEAMWeaver></span> <span class="text-gray-800">${escapeHtml(command)}</span>`;
+				terminalOutput.appendChild(commandDiv);
+				scrollToBottom();
+			}
+
+			// Process command
+			async function processCommand(command) {
+				const cmd = command.toLowerCase();
+
+				// Help command
+				if (cmd === 'help') {
+					displayHelp();
+					return;
+				}
+
+				// Clear command
+				if (cmd === 'clear') {
+					terminalOutput.innerHTML = '';
+					return;
+				}
+
+				// History command
+				if (cmd === 'history') {
+					displayHistory();
+					return;
+				}
+
+				// Exit command
+				if (cmd === 'exit') {
+					displayMessage('To exit, close the browser tab or window.');
+					return;
+				}
+
+				// HTTP request commands (GET, POST, etc.)
+				const httpMatch = command.match(/^(GET|POST|PUT|DELETE|PATCH)\s+(\S+)(\s+(.*))?$/i);
+				if (httpMatch) {
+					const method = httpMatch[1].toUpperCase();
+					const path = httpMatch[2];
+					const body = httpMatch[4] || '';
+
+					await makeHttpRequest(method, path, body);
+					return;
+				}
+
+				// Unknown command
+				displayError(`Unknown command: ${command}`);
+			}
+
+			// Display help information
+			function displayHelp() {
+				const helpDiv = document.createElement('div');
+				helpDiv.className = 'mb-3 text-gray-700';
+				helpDiv.innerHTML = `
+            <p class="text-emerald-600 font-bold mb-1">HyperBEAM REPL Commands:</p>
+            <p><span class="text-emerald-600">help</span>    - Show this help text</p>
+            <p><span class="text-emerald-600">clear</span>   - Clear the screen</p>
+            <p><span class="text-emerald-600">history</span> - Show command history</p>
+            <p><span class="text-emerald-600">exit</span>    - Exit the REPL</p>
             
-            if (command) {
-              // Add to history only if it's not the same as the last command
-              if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== command) {
-                commandHistory.push(command);
-                // Limit history size to 100 items
-                if (commandHistory.length > 100) {
-                  commandHistory.shift();
-                }
-              }
-              
-              // Reset history position
-              historyPosition = -1;
-              currentCommand = '';
-              
-              // Display command
-              displayCommand(command);
-              
-              // Process command
-              await processCommand(command);
-              
-              // Clear input
-              commandInput.value = '';
-            }
-          }
-        });
-        
-        // Navigate through command history
-        function navigateHistory(direction) {
-          if (commandHistory.length === 0) return;
-          
-          if (direction === 'up') {
-            // Save current command if we're just starting to navigate
-            if (historyPosition === -1) {
-              currentCommand = commandInput.value;
-            }
+            <p class="text-emerald-600 font-bold mt-2 mb-1">HTTP Request Format:</p>
+            <p><span class="text-emerald-600">GET</span> /path?query=value</p>
+            <p><span class="text-emerald-600">POST</span> /path {"json":"body"}</p>
+            <p><span class="text-emerald-600">PUT</span> /path Header1: value1; Header2: value2</p>
             
-            // Move up in history if possible
-            if (historyPosition < commandHistory.length - 1) {
-              historyPosition++;
-              commandInput.value = commandHistory[commandHistory.length - 1 - historyPosition];
-            }
-          } else if (direction === 'down') {
-            // Move down in history or restore current command
-            if (historyPosition > 0) {
-              historyPosition--;
-              commandInput.value = commandHistory[commandHistory.length - 1 - historyPosition];
-            } else if (historyPosition === 0) {
-              historyPosition = -1;
-              commandInput.value = currentCommand;
-            }
-          }
-          
-          // Move cursor to end of input
-          setTimeout(() => {
-            commandInput.selectionStart = commandInput.selectionEnd = commandInput.value.length;
-          }, 0);
-        }
-        
-        // Display command in terminal
-        function displayCommand(command) {
-          const commandDiv = document.createElement('div');
-          commandDiv.className = 'mb-2';
-          commandDiv.innerHTML = `<span class="text-green-400">> </span><span class="text-gray-200">${escapeHtml(command)}</span>`;
-          terminalOutput.appendChild(commandDiv);
-          scrollToBottom();
-        }
-        
-        // Process command
-        async function processCommand(command) {
-          const cmd = command.toLowerCase();
-          
-          // Help command
-          if (cmd === 'help') {
-            displayHelp();
-            return;
-          }
-          
-          // Clear command
-          if (cmd === 'clear') {
-            terminalOutput.innerHTML = '';
-            return;
-          }
-          
-          // HTTP request commands (GET, POST, etc.)
-          const httpMatch = command.match(/^(GET|POST|PUT|DELETE|PATCH)\s+(\S+)(\s+(.*))?$/i);
-          if (httpMatch) {
-            const method = httpMatch[1].toUpperCase();
-            const path = httpMatch[2];
-            const body = httpMatch[4] || '';
+            <p class="text-emerald-600 font-bold mt-2 mb-1">Examples:</p>
+            <p><span class="text-emerald-600">GET</span> /~meta@1.0/info/address</p>
+            <p><span class="text-emerald-600">GET</span> /~message@1.0/hello?hello=world</p>
+            <p><span class="text-emerald-600">POST</span> /~wasm@1.0/init/compute {"wasm-function":"fac","wasm-params":[5]}</p>
             
-            await makeHttpRequest(method, path, body);
-            return;
-          }
-          
-          // Unknown command
-          displayError(`Unknown command: ${command}`);
-        }
-        
-        // Display help information
-        function displayHelp() {
-          const helpDiv = document.createElement('div');
-          helpDiv.className = 'mb-4 text-gray-300';
-          helpDiv.innerHTML = `
-            <p class="text-green-400 font-bold mb-2">Available Commands:</p>
-            <p><span class="text-yellow-400">GET /path</span> - Make a GET request to the specified path</p>
-            <p><span class="text-yellow-400">POST /path data</span> - Make a POST request with the specified data</p>
-            <p><span class="text-yellow-400">PUT /path data</span> - Make a PUT request with the specified data</p>
-            <p><span class="text-yellow-400">DELETE /path</span> - Make a DELETE request to the specified path</p>
-            <p><span class="text-yellow-400">PATCH /path data</span> - Make a PATCH request with the specified data</p>
-            <p><span class="text-yellow-400">help</span> - Display this help information</p>
-            <p><span class="text-yellow-400">clear</span> - Clear the terminal</p>
+            <p class="text-emerald-600 font-bold mt-2 mb-1">Useful Paths:</p>
+            <p><span class="text-emerald-600">/~message@1.0/keys</span> - List available keys in message device</p>
+            <p><span class="text-emerald-600">/~meta@1.0/info</span> - Get node information</p>
+            <p><span class="text-emerald-600">/~meta@1.0/devices</span> - List available devices</p>
           `;
-          terminalOutput.appendChild(helpDiv);
-          scrollToBottom();
-        }
-        
-        // Make HTTP request
-        async function makeHttpRequest(method, path, body) {
-          const responseDiv = document.createElement('div');
-          responseDiv.className = 'mb-4';
-          
-          try {
-            // Show loading indicator
-            responseDiv.innerHTML = '<p class="text-blue-400">Sending request...</p>';
-            terminalOutput.appendChild(responseDiv);
-            scrollToBottom();
-            
-            // Prepare request options
-            const options = {
-              method: method,
-              headers: {
-                'Accept': 'application/json, text/plain, */*'
-              }
-            };
-            
-            // Add body for POST, PUT, PATCH requests
-            if (['POST', 'PUT', 'PATCH'].includes(method) && body) {
-              try {
-                // Try to parse as JSON
-                const jsonBody = JSON.parse(body);
-                options.body = JSON.stringify(jsonBody);
-                options.headers['Content-Type'] = 'application/json';
-              } catch (e) {
-                // Use as plain text
-                options.body = body;
-                options.headers['Content-Type'] = 'text/plain';
-              }
-            }
-            
-            // Construct the full URL
-            let url = path;
-            if (!url.startsWith('http')) {
-              // Use current origin if path doesn't include protocol
-              url = window.location.origin + (path.startsWith('/') ? path : '/' + path);
-            }
-            
-            // Make the request
-            const response = await fetch(url, options);
-            const contentType = response.headers.get('content-type') || '';
-            
-            // Get response as text first
-            const responseText = await response.text();
-            
-            // Format response based on content type
-            let formattedResponse;
-            if (contentType.includes('application/json')) {
-              try {
-                const jsonResponse = JSON.parse(responseText);
-                formattedResponse = `<pre><code class="language-json">${JSON.stringify(jsonResponse, null, 2)}</code></pre>`;
-              } catch (e) {
-                formattedResponse = `<pre>${escapeHtml(responseText)}</pre>`;
-              }
-            } else {
-              formattedResponse = `<pre>${escapeHtml(responseText)}</pre>`;
-            }
-            
-            // Display response with status
-            responseDiv.innerHTML = `
-              <div class="flex items-center mb-2">
-                <span class="text-${response.ok ? 'green' : 'red'}-400 mr-2">●</span>
-                <span class="text-gray-300">${response.status} ${response.statusText}</span>
+				terminalOutput.appendChild(helpDiv);
+				scrollToBottom();
+			}
+
+			// Display command history
+			function displayHistory() {
+				if (commandHistory.length === 0) {
+					displayMessage('No command history.');
+					return;
+				}
+
+				const historyDiv = document.createElement('div');
+				historyDiv.className = 'mb-3';
+				let historyHtml = '<p class="text-emerald-600 font-bold mb-1">Command History:</p>';
+
+				commandHistory.forEach((cmd, index) => {
+					historyHtml += `<p><span class="text-gray-500">${index + 1}.</span> ${escapeHtml(cmd)}</p>`;
+				});
+
+				historyDiv.innerHTML = historyHtml;
+				terminalOutput.appendChild(historyDiv);
+				scrollToBottom();
+			}
+
+			// Display a message
+			function displayMessage(message) {
+				const messageDiv = document.createElement('div');
+				messageDiv.className = 'mb-3 text-gray-700';
+				messageDiv.textContent = message;
+				terminalOutput.appendChild(messageDiv);
+				scrollToBottom();
+			}
+
+			// Make HTTP request
+			async function makeHttpRequest(method, path, body) {
+				const responseDiv = document.createElement('div');
+				responseDiv.className = 'mb-3';
+
+				try {
+					// Show loading indicator
+					responseDiv.innerHTML = '<p class="text-blue-600">Sending request...</p>';
+					terminalOutput.appendChild(responseDiv);
+					scrollToBottom();
+
+					// Prepare request options
+					const options = {
+						method: method,
+						headers: {
+							'Accept': 'application/json, text/plain, */*'
+						}
+					};
+
+					// Add body for POST, PUT, PATCH requests
+					if (['POST', 'PUT', 'PATCH'].includes(method) && body) {
+						try {
+							// Try to parse as JSON
+							const jsonBody = JSON.parse(body);
+							options.body = JSON.stringify(jsonBody);
+							options.headers['Content-Type'] = 'application/json';
+						} catch (e) {
+							// Use as plain text
+							options.body = body;
+							options.headers['Content-Type'] = 'text/plain';
+						}
+					}
+
+					// Construct the full URL
+					let url = path;
+					if (!url.startsWith('http')) {
+						// Use current origin if path doesn't include protocol
+						url = window.location.origin + (path.startsWith('/') ? path : '/' + path);
+					}
+
+					// Make the request
+					const response = await fetch(url, options);
+					const contentType = response.headers.get('content-type') || '';
+
+					// Get response as text first
+					const responseText = await response.text();
+
+					// Format response based on content type
+					let formattedResponse;
+					if (contentType.includes('application/json')) {
+						try {
+							const jsonResponse = JSON.parse(responseText);
+							formattedResponse = `<pre><code class="language-json">${JSON.stringify(jsonResponse, null, 2)}</code></pre>`;
+						} catch (e) {
+							formattedResponse = `<pre>${escapeHtml(responseText)}</pre>`;
+						}
+					} else {
+						formattedResponse = `<pre>${escapeHtml(responseText)}</pre>`;
+					}
+
+					// Format headers
+					const headersHtml = formatHeaders(response.headers);
+
+					// Display response with status and headers
+					responseDiv.innerHTML = `
+              <div class="flex items-center mb-1">
+                <span class="text-${response.ok ? 'emerald' : 'red'}-600 mr-2">●</span>
+                <span class="text-gray-700">${response.status} ${response.statusText}</span>
               </div>
-              ${formattedResponse}
+              
+              <!-- Headers (collapsible) -->
+              <div class="headers-container">
+                <div class="headers-toggle" onclick="toggleHeaders(this)">
+                  <div class="toggle-icon">▶</div>
+                  <span class="font-medium text-gray-700">Headers</span>
+                </div>
+                <div class="headers-content">
+                  ${headersHtml}
+                </div>
+              </div>
+              
+              <!-- Response Body -->
+              <pre class="overflow-x-auto">${formattedResponse}</pre>
             `;
-            
-            // Apply syntax highlighting
-            Prism.highlightAllUnder(responseDiv);
-            
-          } catch (error) {
-            responseDiv.innerHTML = `<p class="text-red-400">Error: ${escapeHtml(error.message)}</p>`;
-          }
-          
-          scrollToBottom();
-        }
-        
-        // Display error message
-        function displayError(message) {
-          const errorDiv = document.createElement('div');
-          errorDiv.className = 'text-red-400 mb-2';
-          errorDiv.textContent = message;
-          terminalOutput.appendChild(errorDiv);
-          scrollToBottom();
-        }
-        
-        // Escape HTML to prevent XSS
-        function escapeHtml(text) {
-          const div = document.createElement('div');
-          div.textContent = text;
-          return div.innerHTML;
-        }
-        
-        // Scroll terminal to bottom
-        function scrollToBottom() {
-          terminalOutput.scrollTop = terminalOutput.scrollHeight;
-        }
-      });
-    </script>
-  </body>
+
+					// Apply syntax highlighting
+					Prism.highlightAllUnder(responseDiv);
+
+				} catch (error) {
+					responseDiv.innerHTML = `<p class="text-red-600">Error: ${escapeHtml(error.message)}</p>`;
+				}
+
+				scrollToBottom();
+			}
+
+			// Format headers for display
+			function formatHeaders(headers) {
+				if (!headers) return '<p class="text-gray-500">No headers available</p>';
+
+				let headersHtml = '<div class="header-title">Headers:</div>';
+
+				// Convert headers object to array and sort alphabetically
+				const headerEntries = Array.from(headers.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+				for (const [name, value] of headerEntries) {
+					headersHtml += `<span class="header-line"><span class="header-name">${escapeHtml(name)}:</span> ${escapeHtml(value)}</span>`;
+				}
+
+				return headersHtml;
+			}
+
+			// Display error message
+			function displayError(message) {
+				const errorDiv = document.createElement('div');
+				errorDiv.className = 'text-red-600 mb-1';
+				errorDiv.textContent = message;
+				terminalOutput.appendChild(errorDiv);
+				scrollToBottom();
+			}
+
+			// Escape HTML to prevent XSS
+			function escapeHtml(text) {
+				const div = document.createElement('div');
+				div.textContent = text;
+				return div.innerHTML;
+			}
+
+			// Scroll terminal to bottom
+			function scrollToBottom() {
+				terminalOutput.scrollTop = terminalOutput.scrollHeight;
+			}
+
+			// Make toggleHeaders function available globally
+			window.toggleHeaders = function (element) {
+				const content = element.nextElementSibling;
+				const icon = element.querySelector('.toggle-icon');
+
+				if (content.classList.contains('expanded')) {
+					content.classList.remove('expanded');
+					icon.classList.remove('expanded');
+				} else {
+					content.classList.add('expanded');
+					icon.classList.add('expanded');
+				}
+			};
+		});
+	</script>
+</body>
+
 </html>
