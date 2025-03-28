@@ -615,30 +615,36 @@
 					const response = await fetch(url, options);
 					const contentType = response.headers.get('content-type') || '';
 
-					// Get response as text first
-					const responseText = await response.text();
-
-					// Format response based on content type
-					let formattedResponse;
-					let isMultipart = isMultipartResponse(response.headers);
-					let boundary = '';
-
-					if (isMultipart) {
-						boundary = extractBoundary(response.headers.get('content-type'));
-						formattedResponse = formatMultipartResponse(responseText, boundary);
-					} else if (contentType.includes('application/json')) {
-						try {
-							const jsonResponse = JSON.parse(responseText);
-							formattedResponse = `<pre><code class="language-json">${JSON.stringify(jsonResponse, null, 2)}</code></pre>`;
-						} catch (e) {
-							formattedResponse = `<pre>${escapeHtml(responseText)}</pre>`;
-						}
-					} else {
-						formattedResponse = `<pre>${escapeHtml(responseText)}</pre>`;
-					}
-
 					// Format headers
 					const headersHtml = formatHeaders(response.headers);
+
+					// Process response based on content type
+					let formattedResponse = '';
+					let responseText = '';
+
+					// Check if response should be treated as JSON
+					const isJsonResponse = contentType.includes('application/json') || 
+					                       response.headers.get('codec-device')?.includes('json');
+					
+					if (isJsonResponse) {
+						responseText = await response.text();
+						try {
+							const jsonData = JSON.parse(responseText);
+							// Format JSON with colorized keys
+							const formattedJson = JSON.stringify(jsonData, null, 2)
+								.replace(/"([^"]+)":/g, '<span class="text-indigo-600">"$1"</span>:');
+							formattedResponse = `<pre class="bg-gray-100 p-2 rounded text-sm overflow-auto max-w-full whitespace-pre-wrap">${formattedJson}</pre>`;
+						} catch (e) {
+							formattedResponse = `<pre class="bg-gray-100 p-2 rounded text-sm overflow-auto max-w-full whitespace-pre-wrap">${escapeHtml(responseText)}</pre>`;
+						}
+					} else if (isMultipartResponse(response.headers)) {
+						responseText = await response.text();
+						const boundary = extractBoundary(response.headers.get('content-type'));
+						formattedResponse = formatMultipartResponse(responseText, boundary);
+					} else {
+						responseText = await response.text();
+						formattedResponse = `<pre class="bg-gray-100 p-2 rounded text-sm overflow-auto max-w-full whitespace-pre-wrap">${escapeHtml(responseText)}</pre>`;
+					}
 
 					// Create clickable command for this request
 					const fullCommand = method + ' ' + path + (body ? ' ' + body : '');
