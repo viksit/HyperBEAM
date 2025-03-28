@@ -91,7 +91,7 @@ from(Msg) when is_map(Msg) ->
                             {Key, Item}
                         end,
                         lists:reverse(T)
-                    )    
+                    )
                 )),
                 [{<<"ao-types">>, AoTypes} | Values]
         end,
@@ -238,13 +238,15 @@ decode_value(list, Value) ->
         hb_structured_fields:parse_list(iolist_to_binary(Value))
     );
 decode_value(map, Value) ->
+    % Convert semicolons to commas for dictionary parsing
+    CommaSeparated = binary:replace(iolist_to_binary(Value), <<";">>, <<",">>, [global]),
     maps:from_list(
         lists:map(
             fun({Key, {item, Item, _}}) ->
                 ?event({decoded_item, {explicit, Key}, Item}),
                 {Key, hb_structured_fields:from_bare_item(Item)}
             end,
-            hb_structured_fields:parse_dictionary(iolist_to_binary(Value))
+            hb_structured_fields:parse_dictionary(CommaSeparated)
         )
     );
 decode_value(BinType, Value) when is_binary(BinType) ->
