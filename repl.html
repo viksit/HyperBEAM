@@ -485,8 +485,23 @@
 					return;
 				}
 
-				// HTTP request commands (GET, POST, etc.)
-				const httpMatch = command.match(/^(GET|POST|PUT|DELETE|PATCH)\s+(\S+)(\s+(.*))?$/i);
+				// HTTPie-style command (http GET/POST/PUT/DELETE/PATCH)
+				const httpieMatch = command.match(/^http\s+(GET|POST|PUT|DELETE|PATCH)\s+(\S+)(.*)$/i);
+				if (httpieMatch) {
+					const method = httpieMatch[1].toUpperCase();
+					const path = httpieMatch[2];
+					const paramsStr = httpieMatch[3].trim();
+
+					// Parse HTTPie-style parameters
+					const { headers, jsonData } = parseHttpieParams(paramsStr);
+
+					await makeHttpRequest(method, path, jsonData ? JSON.stringify(jsonData) : '', headers);
+					return;
+				}
+
+				// Standard HTTP request commands (GET, PUT, DELETE, PATCH)
+				// POST is handled separately with advanced parsing
+				const httpMatch = command.match(/^(GET|PUT|DELETE|PATCH)\s+(\S+)(\s+(.*))?$/i);
 				if (httpMatch) {
 					const method = httpMatch[1].toUpperCase();
 					const path = httpMatch[2];
@@ -496,71 +511,67 @@
 					return;
 				}
 
+				// Enhanced POST command with HTTPie-style parameter parsing
+				const postMatch = command.match(/^POST\s+(\S+)(.*)$/i);
+				if (postMatch) {
+					const path = postMatch[1];
+					const paramsStr = postMatch[2].trim();
+
+					// Parse parameters HTTPie-style
+					const { headers, jsonData } = parseHttpieParams(paramsStr);
+
+					// If no structured data was found, treat the entire params string as the body
+					const body = jsonData ? JSON.stringify(jsonData) : paramsStr;
+
+					await makeHttpRequest('POST', path, body, headers);
+					return;
+				}
+
 				// Unknown command
 				displayError(`Unknown command: ${command}`);
 			}
 
-			// Display help information
-			function displayHelp() {
-				const helpDiv = document.createElement('div');
-				helpDiv.className = 'mb-3 text-gray-700';
-				helpDiv.innerHTML = `
-            <p class="text-emerald-600 font-bold mb-1">HyperBEAM REPL Commands:</p>
-            <p><span class="text-emerald-600">help</span>    - Show this help text</p>
-            <p><span class="text-emerald-600">clear</span>   - Clear the screen</p>
-            <p><span class="text-emerald-600">history</span> - Show command history</p>
-            <p><span class="text-emerald-600">exit</span>    - Exit the REPL</p>
-            
-            <p class="text-emerald-600 font-bold mt-2 mb-1">HTTP Request Format:</p>
-            <p><span class="text-emerald-600">GET</span> /path?query=value</p>
-            <p><span class="text-emerald-600">POST</span> /path {"json":"body"}</p>
-            <p><span class="text-emerald-600">PUT</span> /path Header1: value1; Header2: value2</p>
-            
-            <p class="text-emerald-600 font-bold mt-2 mb-1">Examples:</p>
-            <p><span class="text-emerald-600">GET</span> /~meta@1.0/info/address</p>
-            <p><span class="text-emerald-600">GET</span> /~message@1.0/hello?hello=world</p>
-            <p><span class="text-emerald-600">POST</span> /~wasm@1.0/init/compute {"wasm-function":"fac","wasm-params":[5]}</p>
-            
-            <p class="text-emerald-600 font-bold mt-2 mb-1">Useful Paths:</p>
-            <p><span class="text-emerald-600">/~message@1.0/keys</span> - List available keys in message device</p>
-            <p><span class="text-emerald-600">/~meta@1.0/info</span> - Get node information</p>
-            <p><span class="text-emerald-600">/~meta@1.0/devices</span> - List available devices</p>
-          `;
-				terminalOutput.appendChild(helpDiv);
-				scrollToBottom();
-			}
+			// Parse HTTPie-style parameters
+			function parseHttpieParams(paramsStr) {
+				const headers = {};
+				let jsonData = null;
 
-			// Display command history
-			function displayHistory() {
-				if (commandHistory.length === 0) {
-					displayMessage('No command history.');
-					return;
-				}
+				// Split by space but respect quotes
+				const params = paramsStr.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
 
-				const historyDiv = document.createElement('div');
-				historyDiv.className = 'mb-3';
-				let historyHtml = '<p class="text-emerald-600 font-bold mb-1">Command History:</p>';
+				params.forEach(param => {
+					// Handle header parameters (key==value)
+					if (param.includes('==')) {
+						const [key, value] = param.split('==');
+						headers[key] = value.replace(/^["'](.*)["']$/, '$1'); // Remove quotes if present
+					}
+					// Handle JSON data (key:=value)
+					else if (param.includes(':=')) {
+						const [key, value] = param.split(':=');
+						if (!jsonData) jsonData = {};
 
-				commandHistory.forEach((cmd, index) => {
-					historyHtml += `<p><span class="text-gray-500">${index + 1}.</span> ${escapeHtml(cmd)}</p>`;
+						try {
+							// Parse the JSON value
+							const jsonValue = JSON.parse(value.replace(/^["'](.*)["']$/, '$1'));
+							jsonData[key] = jsonValue;
+						} catch (e) {
+							// If not valid JSON, use as string
+							jsonData[key] = value.replace(/^["'](.*)["']$/, '$1');
+						}
+					}
+					// Handle simple JSON data (key=value)
+					else if (param.includes('=') && !param.includes('==')) {
+						const [key, value] = param.split('=');
+						if (!jsonData) jsonData = {};
+						jsonData[key] = value.replace(/^["'](.*)["']$/, '$1');
+					}
 				});
 
-				historyDiv.innerHTML = historyHtml;
-				terminalOutput.appendChild(historyDiv);
-				scrollToBottom();
-			}
-
-			// Display a message
-			function displayMessage(message) {
-				const messageDiv = document.createElement('div');
-				messageDiv.className = 'mb-3 text-gray-700';
-				messageDiv.textContent = message;
-				terminalOutput.appendChild(messageDiv);
-				scrollToBottom();
+				return { headers, jsonData };
 			}
 
 			// Make HTTP request
-			async function makeHttpRequest(method, path, body) {
+			async function makeHttpRequest(method, path, body, customHeaders = {}) {
 				const responseDiv = document.createElement('div');
 				responseDiv.className = 'mb-3';
 
@@ -574,7 +585,8 @@
 					const options = {
 						method: method,
 						headers: {
-							'Accept': 'application/json, text/plain, */*'
+							'Accept': 'application/json, text/plain, */*',
+							...customHeaders
 						}
 					};
 
@@ -859,6 +871,60 @@
 				commandInput.value = command;
 				commandInput.focus();
 			};
+
+			// Display help information
+			function displayHelp() {
+				const helpDiv = document.createElement('div');
+				helpDiv.className = 'mb-3 text-gray-700';
+				helpDiv.innerHTML = `
+            <p class="text-emerald-600 font-bold mb-1">HyperBEAM REPL Commands:</p>
+            <p><span class="text-emerald-600">help</span>    - Show this help text</p>
+            <p><span class="text-emerald-600">clear</span>   - Clear the screen</p>
+            <p><span class="text-emerald-600">history</span> - Show command history</p>
+            <p><span class="text-emerald-600">exit</span>    - Exit the REPL</p>
+            
+            <p class="text-emerald-600 font-bold mt-2 mb-1">Examples:</p>
+            <p><span class="text-emerald-600">GET</span> /~meta@1.0/info/address</p>
+            <p><span class="text-emerald-600">GET</span> /~message@1.0&hello=world&k=v/k</p>
+            <p><span class="text-emerald-600">POST</span> /~message@1.0/id accept-codec==json@1.0 body:='{"greeting":{"text":"Hello","recipient":"World"}}'</p>
+            
+            <p class="text-emerald-600 font-bold mt-2 mb-1">Useful Paths:</p>
+            <p><span class="text-emerald-600">/~message@1.0/keys</span> - List available keys in message device</p>
+            <p><span class="text-emerald-600">/~meta@1.0/info</span> - Get node information</p>
+            <p><span class="text-emerald-600">/~meta@1.0/devices</span> - List available devices</p>
+          `;
+				terminalOutput.appendChild(helpDiv);
+				scrollToBottom();
+			}
+
+			// Display command history
+			function displayHistory() {
+				if (commandHistory.length === 0) {
+					displayMessage('No command history.');
+					return;
+				}
+
+				const historyDiv = document.createElement('div');
+				historyDiv.className = 'mb-3';
+				let historyHtml = '<p class="text-emerald-600 font-bold mb-1">Command History:</p>';
+
+				commandHistory.forEach((cmd, index) => {
+					historyHtml += `<p><span class="text-gray-500">${index + 1}.</span> ${escapeHtml(cmd)}</p>`;
+				});
+
+				historyDiv.innerHTML = historyHtml;
+				terminalOutput.appendChild(historyDiv);
+				scrollToBottom();
+			}
+
+			// Display a message
+			function displayMessage(message) {
+				const messageDiv = document.createElement('div');
+				messageDiv.className = 'mb-3 text-gray-700';
+				messageDiv.innerHTML = message;
+				terminalOutput.appendChild(messageDiv);
+				scrollToBottom();
+			}
 		});
 	</script>
 </body>
