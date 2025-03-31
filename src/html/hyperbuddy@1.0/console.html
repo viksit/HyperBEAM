@@ -295,6 +295,9 @@
 			<button id="clear-btn" class="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs transition">
 				Clear
 			</button>
+			<button id="fullscreen-btn" class="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs transition">
+				Full Screen
+			</button>
 		</div>
 	</header>
 
@@ -326,6 +329,7 @@
 			const terminalOutput = document.getElementById('terminal-output');
 			const commandInput = document.getElementById('command-input');
 			const clearBtn = document.getElementById('clear-btn');
+			const fullscreenButton = document.getElementById('fullscreen-btn');
 
 			// Command history management
 			const commandHistory = [];
@@ -344,6 +348,33 @@
 			clearBtn.addEventListener('click', () => {
 				terminalOutput.innerHTML = '';
 				addWelcomeMessage();
+			});
+
+			// Fullscreen functionality
+			// Toggle fullscreen mode
+			fullscreenButton.addEventListener('click', () => {
+				toggleExpandedView();
+			});
+			
+			// Function to toggle expanded view
+			function toggleExpandedView() {
+				// Send a message to the parent window to expand the console
+				if (window.parent) {
+					const isExpanded = fullscreenButton.textContent.includes('Exit');
+					window.parent.postMessage({
+						action: isExpanded ? 'exitExpandedConsole' : 'expandConsole'
+					}, '*');
+					
+					// Update button text based on current state
+					fullscreenButton.textContent = isExpanded ? 'Full Screen' : 'Exit Full Screen';
+				}
+			}
+			
+			// Listen for messages from parent to update button state
+			window.addEventListener('message', (event) => {
+				if (event.data && event.data.consoleState) {
+					fullscreenButton.textContent = event.data.consoleState === 'expanded' ? 'Exit Full Screen' : 'Full Screen';
+				}
 			});
 
 			// Add welcome message

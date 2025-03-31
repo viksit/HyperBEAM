@@ -1,5 +1,16 @@
 import { get, formatDisplayAmount, copyToClipboard } from '/~hyperbuddy@1.0/utils.js';
 
+// Set up global message handler for console communications
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.action) {
+    if (event.data.action === 'expandConsole') {
+      expandConsole();
+    } else if (event.data.action === 'exitExpandedConsole') {
+      exitExpandedConsole();
+    }
+  }
+});
+
 /**
  * Parse info data from the server response
  * @param {string} text - The raw info text
@@ -150,7 +161,85 @@ function addConsole() {
   consoleContainer.style.minHeight = "500px";
   consoleContainer.style.border = "none";
   consoleContainer.src = "/~hyperbuddy@1.0/console";
+  consoleContainer.id = "console-iframe";
   container.appendChild(consoleContainer);
+}
+
+/**
+ * Expand the console to take over the entire screen
+ */
+function expandConsole() {
+  const consoleIframe = document.getElementById("console-iframe");
+  if (!consoleIframe) {
+    return;
+  }
+  
+  // Create fullscreen container if it doesn't exist
+  let fullscreenContainer = document.getElementById("fullscreen-container");
+  if (!fullscreenContainer) {
+    fullscreenContainer = document.createElement("div");
+    fullscreenContainer.id = "fullscreen-container";
+    fullscreenContainer.style.position = "fixed";
+    fullscreenContainer.style.top = "0";
+    fullscreenContainer.style.left = "0";
+    fullscreenContainer.style.width = "100%";
+    fullscreenContainer.style.height = "100%";
+    fullscreenContainer.style.backgroundColor = "#ffffff";
+    fullscreenContainer.style.zIndex = "9999";
+    fullscreenContainer.style.display = "flex";
+    fullscreenContainer.style.flexDirection = "column";
+    document.body.appendChild(fullscreenContainer);
+  }
+  
+  // Move the iframe to the fullscreen container
+  fullscreenContainer.appendChild(consoleIframe);
+  
+  // Set iframe to fill the container
+  consoleIframe.style.flex = "1";
+  consoleIframe.style.width = "100%";
+  consoleIframe.style.height = "100%";
+  
+  // Notify the iframe that it's now expanded
+  setTimeout(() => {
+    if (consoleIframe.contentWindow) {
+      consoleIframe.contentWindow.postMessage({
+        consoleState: 'expanded'
+      }, '*');
+    }
+  }, 100); // Short delay to ensure iframe is ready
+}
+
+/**
+ * Exit the expanded console view and return to normal layout
+ */
+function exitExpandedConsole() {
+  const consoleIframe = document.getElementById("console-iframe");
+  const fullscreenContainer = document.getElementById("fullscreen-container");
+  const consoleSection = document.getElementById("console-section");
+  
+  if (!consoleIframe || !fullscreenContainer || !consoleSection) {
+    return;
+  }
+  
+  // Move the iframe back to its original container
+  consoleSection.appendChild(consoleIframe);
+  
+  // Reset iframe styles
+  consoleIframe.style.flex = "";
+  consoleIframe.style.height = "";
+  consoleIframe.style.minHeight = "500px";
+  
+  // Remove the fullscreen container
+  document.body.removeChild(fullscreenContainer);
+  
+  // Notify the iframe that it's now in normal mode
+  setTimeout(() => {
+    if (consoleIframe.contentWindow) {
+      consoleIframe.contentWindow.postMessage({
+        consoleState: 'normal'
+      }, '*');
+    }
+  }, 100); // Short delay to ensure iframe is ready
 }
 
 // Export functions for use in other modules
@@ -158,5 +247,7 @@ export {
   parseInfo,
   renderInfoGroups,
   fetchInfo,
-  addConsole
+  addConsole,
+  expandConsole,
+  exitExpandedConsole
 }; 
